@@ -95,7 +95,8 @@ boot_alloc(uint32_t n)
 	// which points to the end of the kernel's bss segment:
 	// the first virtual address that the linker did *not* assign
 	// to any kernel code or global variables.
-	if (!nextfree) {
+	if (!nextfree)
+	{
 		extern char end[];
 		nextfree = ROUNDUP((char *) end, PGSIZE);
 	}
@@ -106,7 +107,15 @@ boot_alloc(uint32_t n)
 	//
 	// LAB 2: Your code here.
 
-	return NULL;
+	if (n != 0)
+	{
+		result = nextfree;
+		nextfree = ROUNDUP((char *) (nextfree+n), PGSIZE);
+		if ((int)nextfree > PGSIZE*1024) panic("boot_alloc: out of memory\n");
+		return result;
+	}
+	else return nextfree;
+
 }
 
 // Set up a two-level page table:
@@ -128,7 +137,7 @@ mem_init(void)
 	i386_detect_memory();
 
 	// Remove this line when you're ready to test this function.
-	panic("mem_init: This function is not finished\n");
+	// panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
@@ -153,6 +162,11 @@ mem_init(void)
 	// memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
+
+	pages = (struct PageInfo*) boot_alloc(npages*sizeof(struct PageInfo));
+	memset(pages, 0, npages*sizeof(struct PageInfo));
+
+
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -256,11 +270,27 @@ page_init(void)
 	// Change the code to reflect this.
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
+
+
 	size_t i;
-	for (i = 0; i < npages; i++) {
-		pages[i].pp_ref = 0;
-		pages[i].pp_link = page_free_list;
-		page_free_list = &pages[i];
+	physaddr_t pp_address;
+	void* ka;
+
+	for (i = 0; i < npages; i++)
+	{
+		pp_address = page2pa(&pages[i]);
+
+		if (! ((i == 0) | ( (pp_address >= IOPHYSMEM) & (pp_address < PADDR(boot_alloc(0)))) ) )
+		{
+			pages[i].pp_ref = 0;
+			pages[i].pp_link = page_free_list;
+			page_free_list = &pages[i];
+		}
+		else
+		{
+			pages[i].pp_link = NULL;
+		}
+
 	}
 }
 
@@ -279,8 +309,16 @@ page_init(void)
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-	// Fill this function in
-	return 0;
+	if (page_free_list) {
+        struct PageInfo *ret = page_free_list;
+        page_free_list = page_free_list->pp_link;
+        ret->pp_link = NULL;
+
+        if (alloc_flags & ALLOC_ZERO) memset( (void*) page2kva(ret), 0, PGSIZE);
+
+        return ret;
+    }
+    return NULL;
 }
 
 //
@@ -293,6 +331,10 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+	if ((pp->pp_ref != 0) | (pp->pp_link != NULL) ) panic("page_free: Try to free a page that cannot be freed\n");
+	pp->pp_link = page_free_list;
+	pp->pp_ref = 0;
+	page_free_list = pp;
 }
 
 //
@@ -331,8 +373,18 @@ page_decref(struct PageInfo *pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	// Fill this function in
-	return NULL;
+	pte_t * page_table = (pte_t *) pgdir[(int)PDX(va)]; /*Esta bien ?*/
+	if (!(page_table & PTE_P))
+	{
+		if (!create) return NULL;
+		struct PageInfo* page = page_alloc(0);
+		if (!page) return NULL;
+		page->pp_ref++;
+		physaddr_t pa = page2pa(page);
+		*page_table_entry = (pte_t ) pa;
+	}
+	pte_t * page_table_entry = (pte_t *) PTE_ADDR(page_table) + PTX(va);
+	return page_table_entry; //convertir a dir virtu
 }
 
 //
@@ -380,7 +432,11 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+	/*VER Requirements*/
+	pte_t * pte = pgdir_walk(pgdir, va, 0);
+	pgdir[(int)PDX(va)] = *pte;
+	pte[(int)PTX(va)] = page2pa(pp);
+	pp->pp_ref++;
 	return 0;
 }
 
@@ -398,8 +454,7 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+	return pa2page(*pgdir_walk(pgdir, va, 0));
 }
 
 //
@@ -420,7 +475,14 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+	struct PageInfo * page = page_lookup(pgdir, va, 0);
+	if (page)
+	{
+		page_decref(page);
+		tlb_invalidate(pgdir, va);
+		/*Que significa el punto 3 ?*/
+
+	}
 }
 
 //
