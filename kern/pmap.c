@@ -373,17 +373,17 @@ page_decref(struct PageInfo *pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	pte_t * page_table = (pte_t *) pgdir[(int)PDX(va)]; /*Esta bien ?*/
-	if (!(page_table & PTE_P))
+	pde_t * pgdir_entry = &pgdir[PDX(va)]; /*Esta bien ?*/
+	if (!(*pgdir_entry & PTE_P))
 	{
 		if (!create) return NULL;
 		struct PageInfo* page = page_alloc(0);
 		if (!page) return NULL;
 		page->pp_ref++;
-		physaddr_t pa = page2pa(page);
-		*page_table_entry = (pte_t ) pa;
+		physaddr_t pa_page = page2pa(page);
+		*pgdir_entry = pa_page | PTE_P | PTE_U | PTE_W;
 	}
-	pte_t * page_table_entry = (pte_t *) PTE_ADDR(page_table) + PTX(va);
+	pte_t * page_table_entry = (KADDR(PTE_ADDR(*pgdir_entry)) + PTX(va));
 	return page_table_entry; //convertir a dir virtu
 }
 
@@ -434,8 +434,13 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	/*VER Requirements*/
 	pte_t * pte = pgdir_walk(pgdir, va, 0);
-	pgdir[(int)PDX(va)] = *pte;
-	pte[(int)PTX(va)] = page2pa(pp);
+	if ((*pte & PTE_P))
+	{
+		page_remove(pgdir, va);
+		pte = pgdir_walk(pgdir, va, 1);
+		if (!pte) return -E_NO_MEM;
+	}
+	*pte = page2pa(pp) | perm | PTE_P;
 	pp->pp_ref++;
 	return 0;
 }
@@ -454,7 +459,9 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	return pa2page(*pgdir_walk(pgdir, va, 0));
+	pte_t* pte = pgdir_walk(pgdir, va, 0);
+	if (!pte) return NULL;
+	return pa2page(PTE_ADDR(*pte));
 }
 
 //
@@ -479,9 +486,9 @@ page_remove(pde_t *pgdir, void *va)
 	if (page)
 	{
 		page_decref(page);
+		pte_t * pte = pgdir_walk(pgdir, va, 0);
+		if (pte) pte = 0;
 		tlb_invalidate(pgdir, va);
-		/*Que significa el punto 3 ?*/
-
 	}
 }
 
