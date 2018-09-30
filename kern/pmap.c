@@ -115,7 +115,7 @@ boot_alloc(uint32_t n)
 		return result;
 	}
 	else return nextfree;
-	
+
 
 }
 
@@ -371,6 +371,7 @@ page_decref(struct PageInfo *pp)
 // Hint 3: look at inc/mmu.h for useful macros that mainipulate page
 // table and page directory entries.
 //
+
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
@@ -378,14 +379,13 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	if (!(*pgdir_entry & PTE_P))
 	{
 		if (!create) return NULL;
-		struct PageInfo* page = page_alloc(0);
+		struct PageInfo* page = page_alloc(1);
 		if (!page) return NULL;
-		page->pp_ref++;
-		physaddr_t pa_page = page2pa(page);
-		*pgdir_entry = pa_page | PTE_P | PTE_U | PTE_W;
+		page->pp_ref = 1;
+		*pgdir_entry = page2pa(page) | PTE_P | PTE_U | PTE_W;
 	}
 	pte_t * page_table_entry = (KADDR(PTE_ADDR(*pgdir_entry)) + PTX(va));
-	return page_table_entry; //convertir a dir virtu
+	return page_table_entry;
 }
 
 //
@@ -434,12 +434,11 @@ int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	/*VER Requirements*/
-	pte_t * pte = pgdir_walk(pgdir, va, 0);
+	pte_t * pte = pgdir_walk(pgdir, va, 1);
+	if (!pte) return -E_NO_MEM;
 	if ((*pte & PTE_P))
 	{
 		page_remove(pgdir, va);
-		pte = pgdir_walk(pgdir, va, 1);
-		if (!pte) return -E_NO_MEM;
 	}
 	*pte = page2pa(pp) | perm | PTE_P;
 	pp->pp_ref++;
