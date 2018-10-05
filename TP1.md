@@ -11,7 +11,10 @@ Recibe un puntero a un struct PageInfo *pp y devuelve la direccion de memoria fi
 boot_alloc_pos
 --------------
 
-a.
+a. Al hacer readelf kernel -a, pudimos ver que en el codigo objeto lo ultimo que direcciona son las variables globales. La ultima es pages direccionada virtualmente en 0xf011794c. 
+Entonces al entrar a la primer llamada de boot_alloc, lo que ocurre es que end apunta a esta direccion, la proxima libre luego de direccionar todo el codigo objeto en memoria. 
+Luego nextfree es igual a esta direccion redondeada para "arriba" a 4096 (pagesize), y esto es lo que devolvera la funcion en su primer llamada.
+ 
 
 b. make gdb
 gdb -q -s obj/kern/kernel -ex 'target remote 127.0.0.1:26000' -n -x .gdbinit
@@ -76,8 +79,8 @@ $4 = 0xf0100702 <cons_init> "U\211\345\203\354\b\350\266\373\377\377\350\277\372
 (gdb) 
 => 0xf0100a80 <boot_alloc+39>:	cmp    $0x400000,%edx
 114			if ((int)nextfree > PGSIZE*1024) panic("boot_alloc: out of memory\n");
-(gdb) p nextfree 
-$5 = 0xf0119000 ""
+(gdb) p result 
+$5 = 0xf0118000 ""
 (gdb) p (char*) end
 $6 = 0xf0100702 <cons_init> "U\211\345\203\354\b\350\266\373\377\377\350\277\372\377\377\200=4u", <incomplete sequence \360>
 
