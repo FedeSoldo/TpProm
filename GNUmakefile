@@ -310,16 +310,16 @@ myapi.key:
 prep-%:
 	$(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 
-run-%-nox-gdb: prep-%
+run-%-nox-gdb: prep-% pre-qemu
 	$(QEMU) -nographic $(QEMUOPTS) -S
 
-run-%-gdb: prep-%
+run-%-gdb: prep-% pre-qemu
 	$(QEMU) $(QEMUOPTS) -S
 
-run-%-nox: prep-%
+run-%-nox: prep-% pre-qemu
 	$(QEMU) -nographic $(QEMUOPTS)
 
-run-%: prep-%
+run-%: prep-% pre-qemu
 	$(QEMU) $(QEMUOPTS)
 
 # This magic automatically generates makefile dependencies
