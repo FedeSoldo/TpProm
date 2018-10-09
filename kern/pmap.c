@@ -410,9 +410,20 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	pte_t *pte;
-	for (size_t i = 0; i < size / PGSIZE; i++) {
-		pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(i * PGSIZE)), 1);
-		*pte = (pa + i * PGSIZE) | perm | PTE_P;
+	pde_t *pde;
+	if (pa % PTSIZE == 0)
+	{
+		for (size_t i = 0; i < size / PTSIZE; i++) {
+			pde = &pgdir[PDX((va + (uintptr_t)(i * PTSIZE)))];
+			*pde = (pa + i * PTSIZE) | perm | PTE_P;
+		}
+	}
+	else
+	{
+		for (size_t j = 0; j < size / PGSIZE; j++) {
+			pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(j * PGSIZE)), 1);
+			*pte = (pa + j * PGSIZE) | perm | PTE_P;
+		}
 	}
 }
 
