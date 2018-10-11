@@ -409,12 +409,21 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
+	
+	#ifndef TP1_PSE
 	pte_t *pte;
+    for (size_t j = 0; j < size / PGSIZE; j++) {
+			pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(j * PGSIZE)), 1);
+			*pte = (pa + j * PGSIZE) | perm | PTE_P;
+		}
+	#else
+    pte_t *pte;
 	pde_t *pde;
-	if (pa % PTSIZE == 0 && size >= PTSIZE )
+
+	if (pa % PTSIZE == 0)
 	{
 		for (size_t i = 0; i < size / PTSIZE; i++) {
-			pde = &pgdir[PDX(va + (i * PTSIZE))];
+			pde = &pgdir[PDX(va + (uintptr_t)(i * PTSIZE))];
 			*pde = (pa + i * PTSIZE) | perm | PTE_P | PTE_PS;
 		}
 	}
@@ -425,6 +434,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 			*pte = (pa + j * PGSIZE) | perm | PTE_P;
 		}
 	}
+	#endif
 }
 
 //
