@@ -411,11 +411,11 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 {
 	pte_t *pte;
 	pde_t *pde;
-	if (pa % PTSIZE == 0)
+	if (pa % PTSIZE == 0 && size >= PTSIZE )
 	{
 		for (size_t i = 0; i < size / PTSIZE; i++) {
-			pde = &pgdir[PDX((va + (uintptr_t)(i * PTSIZE)))];
-			*pde = (pa + i * PTSIZE) | perm | PTE_P;
+			pde = &pgdir[PDX(va + (i * PTSIZE))];
+			*pde = (pa + i * PTSIZE) | perm | PTE_P | PTE_PS;
 		}
 	}
 	else
