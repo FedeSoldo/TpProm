@@ -111,8 +111,15 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 void
 env_init(void)
 {
-	// Set up envs array
-	// LAB 3: Your code here.
+	for (size_t i = 0; i < NENV; i++) {
+		env_free_list = &envs[i];					//Agrego el env a la lista de env libres
+		env_free_list->env_id = 0;				//Seteo el id a 0
+		if ( (i+1) < NENV) env_free_list->env_link = &envs[i+1];		//El proximo env libre lo guardo en link si no soy el ultimo env
+		else{
+			env_free_list->env_link = NULL;	//Si soy el ultimo env apunto a NULL y antes de salir del for me quedo apuntando al primer env libre
+			env_free_list = &envs[0];
+		}
+	}
 
 	// Per-CPU part of the initialization
 	env_init_percpu();
@@ -175,7 +182,9 @@ env_setup_vm(struct Env *e)
 	//	pp_ref for env_free to work correctly.
 	//    - The functions in kern/pmap.h are handy.
 
-	// LAB 3: Your code here.
+	e->env_pgdir = page2kva(p);
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
+	p->pp_ref++;
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
@@ -259,6 +268,18 @@ region_alloc(struct Env *e, void *va, size_t len)
 {
 	// LAB 3: Your code here.
 	// (But only if you need it for load_icode.)
+	va = (void*) ROUNDDOWN((uintptr_t) va, PGSIZE);
+	void* end = (void*) ROUNDUP((uintptr_t) (va+len), PGSIZE);
+	struct PageInfo* pp;
+
+	while (va < end){
+		pp = page_alloc(0);
+		if (!pp)
+			panic("region_alloc: out of free memory");
+		if ((page_insert(e->env_pgdir, pp, va, PTE_U | PTE_W)) < 0)
+			panic("region_alloc: failed to link");
+		va += PGSIZE;
+	}
 	//
 	// Hint: It is easier to use region_alloc if the caller can pass
 	//   'va' and 'len' values that are not page-aligned.
@@ -320,6 +341,28 @@ load_icode(struct Env *e, uint8_t *binary)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
+
+	struct Elf* elfhdr = (struct Elf *) binary;
+	struct Proghdr *ph, *eph;
+
+	lcr3(PADDR(e->env_pgdir));
+
+	if (elfhdr->e_magic != ELF_MAGIC) panic("load_icode: invalid ELF");
+
+	ph = (struct Proghdr *) ((uint8_t *) elfhdr + elfhdr->e_phoff);
+	eph = ph + elfhdr->e_phnum;
+	for (; ph < eph; ph++)
+	{
+		if (ph->p_type == ELF_PROG_LOAD)
+		{
+			region_alloc(e, (void*) ph->p_va, ph->p_memsz);
+			memcpy((void*) ph->p_va, binary + ph->p_offset, ph->p_filesz);
+			memset((void*) ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
+		}
+	}
+
+	e->env_tf.tf_eip = elfhdr->e_entry;
+
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
