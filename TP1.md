@@ -90,3 +90,12 @@ page_alloc
 ----------
 
 Como se explico anteriormente, page2pa recibe un puntero a un struct PageInfo *pp y devuelve la direccion de memoria fisica donde comienza la pagina. Por otro lado, page2kva, utiliza la macro KADDR que toma una direccion fisica y devuelve la kernel virtual address correspondiente. Entonces, page2kva recibe tambien un struct PageInfo *pp que convierte a direccion fisica usando page2pa, para luego usar la macro KADDR y asi devolver una kernel virtual address.
+
+
+map_region_large
+---------
+
+Con 2 niveles de indireccion, se usan 4MB para el page directory. Tenemos 2^10 paginas de 4 bytes cada una y a su vez 1024 page tables como maximo de 4MB, es decir 4294967296 bytes.
+En el caso de Large Pages tenemos 4194304 bytes. Por lo tanto estamos ahorrando 4MB.
+
+Es una cantidad fija, ya que sin importar la cantidad de memoria fisica que tenga la maquina, la parte del sistema operativo que trabaja con los page directories siempre es la misma.
