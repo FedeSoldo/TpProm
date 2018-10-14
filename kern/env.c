@@ -12,7 +12,7 @@
 #include <kern/trap.h>
 #include <kern/monitor.h>
 
-struct Env *envs = NULL;           // All environments
+struct Env *envs = NULL;           // All environments. Es el arrelo de longitud NENVS
 struct Env *curenv = NULL;         // The current env
 static struct Env *env_free_list;  // Free environment list
                                    // (linked by Env->env_link)
@@ -182,7 +182,7 @@ env_setup_vm(struct Env *e)
 	//	pp_ref for env_free to work correctly.
 	//    - The functions in kern/pmap.h are handy.
 
-	e->env_pgdir = page2kva(p);
+	e->env_pgdir = page2kva(p); //Estamos bien sin castear a pde_t* ?
 	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 	p->pp_ref++;
 
@@ -209,9 +209,10 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	struct Env *e;
 
 	if (!(e = env_free_list))
-		return -E_NO_FREE_ENV;
+		return -E_NO_FREE_ENV; //Todos los procesos estan alocados.
 
 	// Allocate and set up the page directory for this environment.
+	//Le configura un page directory al proceso.
 	if ((r = env_setup_vm(e)) < 0)
 		return r;
 
@@ -368,6 +369,8 @@ load_icode(struct Env *e, uint8_t *binary)
 	// at virtual address USTACKTOP - PGSIZE.
 
 	// LAB 3: Your code here.
+
+	region_alloc(e, (void *)(USTACKTOP - PGSIZE), PGSIZE); //Esta bien esto ?
 }
 
 //
@@ -381,6 +384,10 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
+	struct Env* newProcess;
+	env_alloc(&newProcess, 0); //Le paso el nuevo proceso a inicializar y le pongo 0 al parent_id como pide el enunciado.
+	load_icode(newProcess, binary);
+	newProcess->env_type = type;
 }
 
 //
@@ -497,6 +504,13 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
+	//Sigo los pasos recomendados arriba.
+	if (e->env_status == ENV_RUNNING) e->env_status = ENV_RUNNABLE;
+	curenv = e;
+	e->env_status = ENV_RUNNING;
+	e->env_runs++;
+	lcr3(PADDR(e->env_pgdir));
+	env_pop_tf(&e->env_tf); //Segun entendi env_pop_tf se ocupa de resetear todo el ambiente del proceso.
 
-	panic("env_run not yet implemented");
+	//panic("env_run not yet implemented");
 }
