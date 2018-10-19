@@ -111,15 +111,15 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 void
 env_init(void)
 {
-	for (size_t i = 0; i < NENV; i++) {
-		env_free_list = &envs[i];					//Agrego el env a la lista de env libres
-		env_free_list->env_id = 0;				//Seteo el id a 0
-		if ( (i+1) < NENV) env_free_list->env_link = &envs[i+1];		//El proximo env libre lo guardo en link si no soy el ultimo env
-		else{
-			env_free_list->env_link = NULL;	//Si soy el ultimo env apunto a NULL y antes de salir del for me quedo apuntando al primer env libre
-			env_free_list = &envs[0];
-		}
+	for (size_t i = 0; i < NENV-1; i++) {
+		//nv_free_list = &envs[i];					//Agrego el env a la lista de env libres
+//		env_free_list->env_id = 0;				//Seteo el id a 0
+		envs[i].env_link = &envs[i+1];		//El proximo env libre lo guardo en link si no soy el ultimo env
+//		else{
+	//		env_free_list->env_link = NULL;	//Si soy el ultimo env apunto a NULL y antes de salir del for me quedo apuntando al primer env libre
+	//	}
 	}
+	env_free_list = &envs[0];
 
 	// Per-CPU part of the initialization
 	env_init_percpu();

@@ -51,5 +51,5 @@
 
 /*
  * Lab 3: Your code here for _alltraps
+ Mirar struct de abajo para arriba.
  */
-

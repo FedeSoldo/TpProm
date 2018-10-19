@@ -15,8 +15,8 @@ env_init_percpu
 env_pop_tf
 ----------
 
-...
-
+1. Tras el primer movl de la funcion hay un 0 en esp
+2. 
 
 gdb_hello
 ---------
