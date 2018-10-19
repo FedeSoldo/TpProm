@@ -443,7 +443,7 @@ env_free(struct Env *e)
 }
 
 //
-// Frees environment e.
+// Frees environment e-.
 //
 void
 env_destroy(struct Env *e)
