@@ -4,19 +4,23 @@ TP2: Procesos de usuario
 env_alloc
 ---------
 
-
+Asumiendo que los env_id son 0, y sabiendo que el tamaño del struct Env es 96 (60 en hexa)
+pudimos determinar que los id son: 1000, 1060, 10c0, 1120 y 1180.
+Para el caso de que se mate el proceso 630, y asumiendo que estan todos ocupados, el env_free
+apuntara aqui, su id era fc40. Con esta informacion los ids del proceso que se mata y vuelve a
+ejecutar para sus primeras 5 corridas son: 1ec40, 2ec40, 3ec40, 4ec40 y 5ec40.
 
 env_init_percpu
 ---------------
 
-...
-
+Escribe 6 bytes en el GDTR (global descriptor table register). Estos bytes
+representan una direccion de memoria base y un limite (tamaño de la tabla en bytes).
 
 env_pop_tf
 ----------
 
 1. Tras el primer movl de la funcion hay un 0 en esp
-2. 
+2.
 
 gdb_hello
 ---------
