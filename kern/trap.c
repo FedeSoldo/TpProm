@@ -84,6 +84,8 @@ trap_init(void)
 	void handler18(void);
 	void handler19(void);
 
+	void handler48(void);
+
 	SETGATE(idt[0], 0, GD_KT, handler0, 0);
 	SETGATE(idt[1], 0, GD_KT, handler1, 0);
 	SETGATE(idt[2], 0, GD_KT, handler2, 0);
@@ -104,6 +106,8 @@ trap_init(void)
 	SETGATE(idt[17], 0, GD_KT, handler17, 0);
 	SETGATE(idt[18], 0, GD_KT, handler18, 0);
 	SETGATE(idt[19], 0, GD_KT, handler19, 0);
+
+	SETGATE(idt[48], 0, GD_KT, handler48, 3);
 
 	//Se podia usar el for, pero no sabia bien como definir el arreglo en el .S.
 	//for (size_t i = 0; i < 256; i++)
@@ -200,6 +204,20 @@ trap_dispatch(struct Trapframe *tf)
 		monitor(tf);
 		return;
 	}
+
+	if (tf->tf_trapno == T_SYSCALL)
+	{
+		tf->tf_regs.reg_eax = syscall(
+				tf->tf_regs.reg_eax,
+				tf->tf_regs.reg_edx,
+				tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx,
+				tf->tf_regs.reg_edi,
+				tf->tf_regs.reg_esi
+				);
+		return;
+	}
+
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);

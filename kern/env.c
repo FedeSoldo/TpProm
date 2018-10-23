@@ -505,7 +505,7 @@ env_run(struct Env *e)
 
 	// LAB 3: Your code here.
 	//Sigo los pasos recomendados arriba.
-	if (e->env_status == ENV_RUNNING) e->env_status = ENV_RUNNABLE;
+	if (curenv && e->env_status == ENV_RUNNING) e->env_status = ENV_RUNNABLE;
 	curenv = e;
 	e->env_status = ENV_RUNNING;
 	e->env_runs++;
