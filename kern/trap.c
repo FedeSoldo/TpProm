@@ -63,11 +63,54 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	for (size_t i = 0; i < 256; i++)
-	{
+	void handler0(void);
+	void handler1(void);
+	void handler2(void);
+	void handler3(void);
+	void handler4(void);
+	void handler5(void);
+	void handler6(void);
+	void handler7(void);
+	void handler8(void);
+
+	void handler10(void);
+	void handler11(void);
+	void handler12(void);
+	void handler13(void);
+	void handler14(void);
+
+	void handler16(void);
+	void handler17(void);
+	void handler18(void);
+	void handler19(void);
+
+	SETGATE(idt[0], 0, GD_KT, handler0, 0);
+	SETGATE(idt[1], 0, GD_KT, handler1, 0);
+	SETGATE(idt[2], 0, GD_KT, handler2, 0);
+	SETGATE(idt[3], 0, GD_KT, handler3, 0);
+	SETGATE(idt[4], 0, GD_KT, handler4, 0);
+	SETGATE(idt[5], 0, GD_KT, handler5, 0);
+	SETGATE(idt[6], 0, GD_KT, handler6, 0);
+	SETGATE(idt[7], 0, GD_KT, handler7, 0);
+	SETGATE(idt[8], 0, GD_KT, handler8, 0);
+
+	SETGATE(idt[10], 0, GD_KT, handler10, 0);
+	SETGATE(idt[11], 0, GD_KT, handler11, 0);
+	SETGATE(idt[12], 0, GD_KT, handler12, 0);
+	SETGATE(idt[13], 0, GD_KT, handler13, 0);
+	SETGATE(idt[14], 0, GD_KT, handler14, 0);
+
+	SETGATE(idt[16], 0, GD_KT, handler16, 0);
+	SETGATE(idt[17], 0, GD_KT, handler17, 0);
+	SETGATE(idt[18], 0, GD_KT, handler18, 0);
+	SETGATE(idt[19], 0, GD_KT, handler19, 0);
+
+	//Se podia usar el for, pero no sabia bien como definir el arreglo en el .S.
+	//for (size_t i = 0; i < 256; i++)
+	//{
 	//	if (i == 2 || i > 20)	SETGATE(idt[i], 0, ALGO MAS)  //PARA INTERRUPTS
 	//	else SETGATE(idt[i], 1, ALGO MAS)										//PARA FAULTS Y EXCEPTIONS
-	}
+	//}
 	// Per-CPU setup
 	trap_init_percpu();
 }

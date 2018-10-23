@@ -47,9 +47,57 @@
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
+ /*
+Lo que hago es usar las macro en base a la informacion de si tienen error code o no
+que hay en la tabla 6.1 del
+manual de Intel. Ademas uso la info que hay en inc/trap.h
+ */
+
+ 	TRAPHANDLER_NOEC(handler0, 0)
+ 	TRAPHANDLER_NOEC(handler1, 1)
+	TRAPHANDLER_NOEC(handler2, 2)
+ 	TRAPHANDLER_NOEC(handler3, 3)
+ 	TRAPHANDLER_NOEC(handler4, 4)
+ 	TRAPHANDLER_NOEC(handler5, 5)
+ 	TRAPHANDLER_NOEC(handler6, 6)
+ 	TRAPHANDLER_NOEC(handler7, 7)
+ 	TRAPHANDLER(handler8, 8)
+
+ 	TRAPHANDLER(handler10, 10)
+ 	TRAPHANDLER(handler11, 11)
+ 	TRAPHANDLER(handler12, 12)
+ 	TRAPHANDLER(handler13, 13)
+ 	TRAPHANDLER(handler14, 14)
+
+ 	TRAPHANDLER_NOEC(handler16, 16)
+	TRAPHANDLER_NOEC(handler17, 17)
+	TRAPHANDLER_NOEC(handler18, 18)
+	TRAPHANDLER_NOEC(handler19, 19)
 
 
 /*
  * Lab 3: Your code here for _alltraps
  Mirar struct de abajo para arriba.
+
+ Consejos de la pagina del MIT:
+ Your _alltraps should:
+
+push values to make the stack look like a struct Trapframe
+load GD_KD into %ds and %es
+pushl %esp to pass a pointer to the Trapframe as an argument to trap()
+call trap (can trap ever return?)
+
+Hay que hacer un switch de stacks antes de lanzar el trap
  */
+
+_alltraps:
+	push %ds
+	push %es
+	pushal
+
+	mov $GD_KD, %ax
+	mov %ax, %ds
+	mov %ax, %es
+
+	pushl %esp
+	call trap
