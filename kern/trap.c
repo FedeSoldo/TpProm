@@ -87,7 +87,7 @@ trap_init(void)
 	SETGATE(idt[0], 0, GD_KT, handler0, 0);
 	SETGATE(idt[1], 0, GD_KT, handler1, 0);
 	SETGATE(idt[2], 0, GD_KT, handler2, 0);
-	SETGATE(idt[3], 0, GD_KT, handler3, 0);
+	SETGATE(idt[3], 0, GD_KT, handler3, 3); //Le doy permiso al usuario
 	SETGATE(idt[4], 0, GD_KT, handler4, 0);
 	SETGATE(idt[5], 0, GD_KT, handler5, 0);
 	SETGATE(idt[6], 0, GD_KT, handler6, 0);
@@ -188,6 +188,18 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+
+	if (tf->tf_trapno == T_PGFLT)
+	{
+		page_fault_handler(tf);
+		return;
+	}
+
+	if (tf->tf_trapno == T_BRKPT)
+	{
+		monitor(tf);
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
