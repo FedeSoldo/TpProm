@@ -159,8 +159,19 @@ CS =001b 00000000 ffffffff 00cffa00 DPL=3 CS32 [-R-]
 Luego de haber ejecutado iret, los registros de un environment de usuario son restaurados para vovler a su ejecución.
 
 
-10.
+10. Lo que realmente sucede en este punto es un content switch.
+Luego de ejecutar la instruccion 0x30 se llama a la macro TRAPHANDLER_NOEC, luego alltraps, trap_dispatch y finalmente se llega a la syscall que ejecuta sys_cputs.
 
+=> 0x8009f6:    int    $0x30
+0x008009f6 in ?? ()
+(gdb) si
+=> 0xf0103880 <trap_handler_48+2>:    push   $0x30
+0xf0103880 in trap_handler_48 () at kern/trapentry.S:74
+74    TRAPHANDLER_NOEC(trap_handler_48, 48);
+---> _alltraps
+---> trap()
+--->trap_dispatch()
+---->syscall()_
 
 
 kern_idt
@@ -173,3 +184,12 @@ Se elegiria un comportamiento dependiendo del momento que queremos lanzar el pro
 
 3. La excepcion que se genera es la numero 13, que es General protection. Sin embargo, mirando el codigo de softint.c, se intenta lanzar la excepcion 14 que es Page fault.
 La diferencia que notamos, se da porque page fault tiene seteado DPI en 0, es decir, permisos para el kernel. Sin embargo softint.c esta intentando usarlo siendo un programa de ususario. Por eso, tenemos una diferencia. Porque en realidad la excepcion que esta saltando es la de proteccion por intentar usar algo sin los permisos correspondientes.
+
+
+
+user_evilhello
+-----------
+
+1. La diferencia esta dada por el nivel de indireccion que se maneja. En evilhello, se pasa como parametro la direccion del kernel entry point. Mientras que en user_evilhello se pasa un puntero a esa direccion.
+
+2. No notamos diferencias de comportamiento, ya que en definitiva ambos intentan acceder a direcciones mayores que ULIM y no tienen los permisos adecuados.
