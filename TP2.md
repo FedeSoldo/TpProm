@@ -159,4 +159,17 @@ CS =001b 00000000 ffffffff 00cffa00 DPL=3 CS32 [-R-]
 Luego de haber ejecutado iret, los registros de un environment de usuario son restaurados para vovler a su ejecución.
 
 
-10. 
+10.
+
+
+
+kern_idt
+---------
+
+1. Se decide en base a si las excepciones devuelven error code o no. TRAPHANDLER se usa para cuando hay error code y TRAPHANDLER_NOEC para cuando no lo hay y asi tener el mismo formato. Si se usara la primera solamente, tendriamos excepciones sin error code usando una macro que espera que los tengan y los formatos serian incorrectos.
+
+2. Lo que cambia es el tipo de excepcion 1 para trap (= exception) gate y 0 para interrupt gate.
+Se elegiria un comportamiento dependiendo del momento que queremos lanzar el problema, ya que interrupts (0) son asincronicos, como un syscall por ejemplo y trap (1) es sincronico, como por ejemplo una division por 0.
+
+3. La excepcion que se genera es la numero 13, que es General protection. Sin embargo, mirando el codigo de softint.c, se intenta lanzar la excepcion 14 que es Page fault.
+La diferencia que notamos, se da porque page fault tiene seteado DPI en 0, es decir, permisos para el kernel. Sin embargo softint.c esta intentando usarlo siendo un programa de ususario. Por eso, tenemos una diferencia. Porque en realidad la excepcion que esta saltando es la de proteccion por intentar usar algo sin los permisos correspondientes.
