@@ -4,9 +4,10 @@ TP2: Procesos de usuario
 env_alloc
 ---------
 
-Asumiendo que los env_id son 0, y sabiendo que el tamaño del struct Env es 96 (60 en hexa)
+1. Asumiendo que los env_id son 0, y sabiendo que el tamaño del struct Env es 96 (60 en hexa)
 pudimos determinar que los id son: 1000, 1060, 10c0, 1120 y 1180.
-Para el caso de que se mate el proceso 630, y asumiendo que estan todos ocupados, el env_free
+
+2. Para el caso de que se mate el proceso 630, y asumiendo que estan todos ocupados, el env_free
 apuntara aqui, su id era fc40. Con esta informacion los ids del proceso que se mata y vuelve a
 ejecutar para sus primeras 5 corridas son: 1ec40, 2ec40, 3ec40, 4ec40 y 5ec40.
 
@@ -19,11 +20,15 @@ representan una direccion de memoria base y un limite (tamaño de la tabla en by
 env_pop_tf
 ----------
 
-1. Tras el primer movl de la funcion hay un 0 en esp
-2.
+1. Tras el primer movl de la funcion, se setea el stack pointer para que apunte al comienzo de Trapframe
+
+2. Justo antes de la instrucción iret, en %esp se encuentra el Instruction Pointer que se cargará en el registro %eip y es la dirección de memoria a donde saltará la ejecución. En 8(%esp) se encuentra el Trap Number (trapno).
+
+3. Para determinar un cambio de ring, la CPU siempre lleva control de los segment selectors. En particular, el code segment register (cs), no puede ser seteados por acciones como mov. Lo importante es que cs mantiene un campo llamado current privilege level (CPL). Este registro es siempre igual al privilegio actual de la CPU, por lo tanto, esta es la forma de la CPU de estar al tanto del nivel de privilegio actual.
 
 gdb_hello
 ---------
+
 1. make gdb
 gdb -q -s obj/kern/kernel -ex 'target remote 127.0.0.1:26000' -n -x .gdbinit
 Reading symbols from obj/kern/kernel...done.
@@ -117,7 +122,12 @@ efectivamente da lo mismo que antes.
 0xf01bf040:	0x00000023
 
 
-7.
+7. Los primeros ocho valores, son los valores de los registros correspondientes al proceso. Son los registros que forman parte del struct PushRegs (edi, esi, ebp, oesp, ebx, edx, ecx, eax).
+Luego, encontramos el valor 0x023 que corresponde al ES del TrapFrame y se repite para el DS.
+Trapno y tf_err valen 0x0.
+En la dirección de memoria 0xf01c0030 encontramos en primer lugar el Instruction Pointer, y luego el registro CS (y el padding 3). Seguido de ellos, se encuentra EFLAGS (cuyo valor es 0).
+Por último se encuentran el Stack Pointer y en la dirección 0xf01c0040, encontramos el SS.
+
 
 
 8. info registers
@@ -126,6 +136,8 @@ ESI=00000000 EDI=00000000 EBP=00000000 ESP=f01bf030
 EIP=f0102e1b EFL=00000096 [--S-AP-] CPL=0 II=0 A20=1 SMM=0 HLT=0
 ES =0023 00000000 ffffffff 00cff300 DPL=3 DS   [-WA]
 CS =0008 00000000 ffffffff 00cf9a00 DPL=0 CS32 [-R-]
+
+Los cambios producidos son porque ya en este paso, hemos hecho un popal que restaura todos los registros de proposito general, se realizan dos pop de %ds y %es y por ultimo se saltea trapno y errorcode. Particularmente el cambio que vemos es debido a la ejecución de la instrucción popal.
 
 
 9. (gdb) p $pc
@@ -144,5 +156,7 @@ EIP=00800020 EFL=00000002 [-------] CPL=3 II=0 A20=1 SMM=0 HLT=0
 ES =0023 00000000 ffffffff 00cff300 DPL=3 DS   [-WA]
 CS =001b 00000000 ffffffff 00cffa00 DPL=3 CS32 [-R-]
 
+Luego de haber ejecutado iret, los registros de un environment de usuario son restaurados para vovler a su ejecución.
 
-10.
+
+10. 

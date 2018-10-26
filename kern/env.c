@@ -385,7 +385,8 @@ env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
 	struct Env* newProcess;
-	env_alloc(&newProcess, 0); //Le paso el nuevo proceso a inicializar y le pongo 0 al parent_id como pide el enunciado.
+	int err = env_alloc(&newProcess, 0); //Le paso el nuevo proceso a inicializar y le pongo 0 al parent_id como pide el enunciado.
+	if (err < 0) panic("env_create: %e", err);
 	load_icode(newProcess, binary);
 	newProcess->env_type = type;
 }
