@@ -12,8 +12,8 @@
 #include <kern/trap.h>
 #include <kern/monitor.h>
 
-struct Env *envs = NULL;           // All environments. Es el arrelo de longitud NENVS
-struct Env *curenv = NULL;         // The current env
+struct Env *envs = NULL;    // All environments. Es el arrelo de longitud NENVS
+struct Env *curenv = NULL;  // The current env
 static struct Env *env_free_list;  // Free environment list
                                    // (linked by Env->env_link)
 
@@ -111,13 +111,15 @@ envid2env(envid_t envid, struct Env **env_store, bool checkperm)
 void
 env_init(void)
 {
-	for (size_t i = 0; i < NENV-1; i++) {
-		//nv_free_list = &envs[i];					//Agrego el env a la lista de env libres
-//		env_free_list->env_id = 0;				//Seteo el id a 0
-		envs[i].env_link = &envs[i+1];		//El proximo env libre lo guardo en link si no soy el ultimo env
-//		else{
-	//		env_free_list->env_link = NULL;	//Si soy el ultimo env apunto a NULL y antes de salir del for me quedo apuntando al primer env libre
-	//	}
+	for (size_t i = 0; i < NENV - 1; i++) {
+		// nv_free_list = &envs[i];					//Agrego el env a la lista de env libres
+		//		env_free_list->env_id = 0; //Seteo el id a 0
+		envs[i].env_link =
+		        &envs[i + 1];  // El proximo env libre lo guardo en link si no soy el ultimo env
+		//		else{
+		//		env_free_list->env_link = NULL;	//Si soy el ultimo
+		//env apunto a NULL y antes de salir del for me quedo apuntando al primer env libre
+		//	}
 	}
 	env_free_list = &envs[0];
 
@@ -182,7 +184,7 @@ env_setup_vm(struct Env *e)
 	//	pp_ref for env_free to work correctly.
 	//    - The functions in kern/pmap.h are handy.
 
-	e->env_pgdir = page2kva(p); //Estamos bien sin castear a pde_t* ?
+	e->env_pgdir = page2kva(p);  // Estamos bien sin castear a pde_t* ?
 	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 	p->pp_ref++;
 
@@ -209,10 +211,10 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	struct Env *e;
 
 	if (!(e = env_free_list))
-		return -E_NO_FREE_ENV; //Todos los procesos estan alocados.
+		return -E_NO_FREE_ENV;  // Todos los procesos estan alocados.
 
 	// Allocate and set up the page directory for this environment.
-	//Le configura un page directory al proceso.
+	// Le configura un page directory al proceso.
 	if ((r = env_setup_vm(e)) < 0)
 		return r;
 
@@ -269,11 +271,11 @@ region_alloc(struct Env *e, void *va, size_t len)
 {
 	// LAB 3: Your code here.
 	// (But only if you need it for load_icode.)
-	va = (void*) ROUNDDOWN((uintptr_t) va, PGSIZE);
-	void* end = (void*) ROUNDUP((uintptr_t) (va+len), PGSIZE);
-	struct PageInfo* pp;
+	va = (void *) ROUNDDOWN((uintptr_t) va, PGSIZE);
+	void *end = (void *) ROUNDUP((uintptr_t)(va + len), PGSIZE);
+	struct PageInfo *pp;
 
-	while (va < end){
+	while (va < end) {
 		pp = page_alloc(0);
 		if (!pp)
 			panic("region_alloc: out of free memory");
@@ -343,22 +345,25 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// LAB 3: Your code here.
 
-	struct Elf* elfhdr = (struct Elf *) binary;
+	struct Elf *elfhdr = (struct Elf *) binary;
 	struct Proghdr *ph, *eph;
 
 	lcr3(PADDR(e->env_pgdir));
 
-	if (elfhdr->e_magic != ELF_MAGIC) panic("load_icode: invalid ELF");
+	if (elfhdr->e_magic != ELF_MAGIC)
+		panic("load_icode: invalid ELF");
 
 	ph = (struct Proghdr *) ((uint8_t *) elfhdr + elfhdr->e_phoff);
 	eph = ph + elfhdr->e_phnum;
-	for (; ph < eph; ph++)
-	{
-		if (ph->p_type == ELF_PROG_LOAD)
-		{
-			region_alloc(e, (void*) ph->p_va, ph->p_memsz);
-			memcpy((void*) ph->p_va, binary + ph->p_offset, ph->p_filesz);
-			memset((void*) ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
+	for (; ph < eph; ph++) {
+		if (ph->p_type == ELF_PROG_LOAD) {
+			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
+			memcpy((void *) ph->p_va,
+			       binary + ph->p_offset,
+			       ph->p_filesz);
+			memset((void *) ph->p_va + ph->p_filesz,
+			       0,
+			       ph->p_memsz - ph->p_filesz);
 		}
 	}
 
@@ -370,7 +375,7 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// LAB 3: Your code here.
 
-	region_alloc(e, (void *)(USTACKTOP - PGSIZE), PGSIZE); //Esta bien esto ?
+	region_alloc(e, (void *) (USTACKTOP - PGSIZE), PGSIZE);  // Esta bien esto ?
 }
 
 //
@@ -384,9 +389,12 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
-	struct Env* newProcess;
-	int err = env_alloc(&newProcess, 0); //Le paso el nuevo proceso a inicializar y le pongo 0 al parent_id como pide el enunciado.
-	if (err < 0) panic("env_create: %e", err);
+	struct Env *newProcess;
+	int err = env_alloc(&newProcess,
+	                    0);  // Le paso el nuevo proceso a inicializar y le
+	                         // pongo 0 al parent_id como pide el enunciado.
+	if (err < 0)
+		panic("env_create: %e", err);
 	load_icode(newProcess, binary);
 	newProcess->env_type = type;
 }
@@ -505,13 +513,14 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
-	//Sigo los pasos recomendados arriba.
-	if (curenv && e->env_status == ENV_RUNNING) e->env_status = ENV_RUNNABLE;
+	// Sigo los pasos recomendados arriba.
+	if (curenv && e->env_status == ENV_RUNNING)
+		e->env_status = ENV_RUNNABLE;
 	curenv = e;
 	e->env_status = ENV_RUNNING;
 	e->env_runs++;
 	lcr3(PADDR(e->env_pgdir));
-	env_pop_tf(&e->env_tf); //Segun entendi env_pop_tf se ocupa de resetear todo el ambiente del proceso.
+	env_pop_tf(&e->env_tf);  // Segun entendi env_pop_tf se ocupa de resetear todo el ambiente del proceso.
 
-	//panic("env_run not yet implemented");
+	// panic("env_run not yet implemented");
 }

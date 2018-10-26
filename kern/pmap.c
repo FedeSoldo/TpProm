@@ -221,7 +221,11 @@ mem_init(void)
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
 
-	boot_map_region(kern_pgdir, KSTACKTOP - KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W | PTE_P);
+	boot_map_region(kern_pgdir,
+	                KSTACKTOP - KSTKSIZE,
+	                KSTKSIZE,
+	                PADDR(bootstack),
+	                PTE_W | PTE_P);
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -424,32 +428,30 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-
-	#ifndef TP1_PSE
+#ifndef TP1_PSE
 	pte_t *pte;
-    for (size_t j = 0; j < size / PGSIZE; j++) {
-			pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(j * PGSIZE)), 1);
-			*pte = (pa + j * PGSIZE) | perm | PTE_P;
-		}
-	#else
-    pte_t *pte;
+	for (size_t j = 0; j < size / PGSIZE; j++) {
+		pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(j * PGSIZE)), 1);
+		*pte = (pa + j * PGSIZE) | perm | PTE_P;
+	}
+#else
+	pte_t *pte;
 	pde_t *pde;
 
-	if (pa % PTSIZE == 0)
-	{
+	if (pa % PTSIZE == 0) {
 		for (size_t i = 0; i < size / PTSIZE; i++) {
 			pde = &pgdir[PDX(va + (uintptr_t)(i * PTSIZE))];
 			*pde = (pa + i * PTSIZE) | perm | PTE_P | PTE_PS;
 		}
-	}
-	else
-	{
+	} else {
 		for (size_t j = 0; j < size / PGSIZE; j++) {
-			pte = pgdir_walk(pgdir, (void *) (va + (uintptr_t)(j * PGSIZE)), 1);
+			pte = pgdir_walk(pgdir,
+			                 (void *) (va + (uintptr_t)(j * PGSIZE)),
+			                 1);
 			*pte = (pa + j * PGSIZE) | perm | PTE_P;
 		}
 	}
-	#endif
+#endif
 }
 
 //
@@ -578,17 +580,24 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
 
-	uint32_t begin = (uint32_t) ROUNDDOWN(va, PGSIZE); //Los hago porque dice que no tienen que estar alineados
-	uint32_t end = (uint32_t) ROUNDUP(va+len, PGSIZE);
+	uint32_t begin = (uint32_t) ROUNDDOWN(
+	        va, PGSIZE);  // Los hago porque dice que no tienen que estar alineados
+	uint32_t end = (uint32_t) ROUNDUP(va + len, PGSIZE);
 	uint32_t i;
-	for (i = begin; i < end; i+=PGSIZE)
-	{
-		pte_t *pte = pgdir_walk(env->env_pgdir, (void*)i, 0); //Obtengo la pte correrspondiente
+	for (i = begin; i < end; i += PGSIZE) {
+		pte_t *pte = pgdir_walk(env->env_pgdir,
+		                        (void *) i,
+		                        0);  // Obtengo la pte correrspondiente
 
-		if ((i>=ULIM) || ((*pte & perm) != perm)) //Condiciones donde no es user program
+		if ((i >= ULIM) || ((*pte & perm) !=
+		                    perm))  // Condiciones donde no es user program
 		{
-			if (i < (uint32_t)va) user_mem_check_addr = (uint32_t)va; //Seteo primer erronea a va
-			else user_mem_check_addr = i; //Seteo como primer erronea a i
+			if (i < (uint32_t) va)
+				user_mem_check_addr =
+				        (uint32_t) va;  // Seteo primer erronea a va
+			else
+				user_mem_check_addr =
+				        i;  // Seteo como primer erronea a i
 			return -E_FAULT;
 		}
 	}
