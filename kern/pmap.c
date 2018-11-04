@@ -342,17 +342,18 @@ page_init(void)
 
 	for (i = 0; i < npages; i++) {
 		pp_address = page2pa(&pages[i]);
+		ka = page2kva(&pages[i]);
 
-		if (!((i == 0) | ((pp_address >= IOPHYSMEM) &
-		                  (pp_address < PADDR(boot_alloc(0)))) | (pp_address < MPENTRY_PADDR ) | ( pp_address >= MPENTRY_PADDR + PGSIZE)))
+		if (i == 0 || (IOPHYSMEM <= pp_address && ka < boot_alloc(0))
+				|| (MPENTRY_PADDR <= pp_address && pp_address < MPENTRY_PADDR + PGSIZE))
+		{
+			pages[i].pp_link = NULL;
+		}
+		else
 		{
 			pages[i].pp_ref = 0;
 			pages[i].pp_link = page_free_list;
 			page_free_list = &pages[i];
-		}
-		else
-		{
-			pages[i].pp_link = NULL;
 		}
 	}
 }
