@@ -238,6 +238,8 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	size = ROUNDDOWN((2 ^ 32) - KERNBASE, PGSIZE);
+boot_map_region(kern_pgdir, KERNBASE, size, (physaddr_t) 0, PTE_W | PTE_P);
 
 	// Initialize the SMP-related parts of the memory map
 	mem_init_mp();
@@ -289,11 +291,14 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-	for (int i = 0; i < NCPU; i++)
+	uintptr_t start = KSTACKTOP - KSTKSIZE;
+	for(int i = 0; i < NCPU; i++)
 	{
-			uint32_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
-			boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE
-				, KSTKSIZE, PADDR(percpu_kstacks[i]) ,PTE_W);
+		boot_map_region(kern_pgdir,
+	            start - i * (KSTKSIZE + KSTKGAP),
+	            KSTKSIZE,
+	            PADDR(&percpu_kstacks[i]),
+	            PTE_W | PTE_P);
 	}
 
 }
