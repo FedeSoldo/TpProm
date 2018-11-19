@@ -75,6 +75,8 @@ manual de Intel. Ademas uso la info que hay en inc/trap.h
 	TRAPHANDLER_NOEC(handler18, 18)
 	TRAPHANDLER_NOEC(handler19, 19)
 
+	TRAPHANDLER_NOEC(handler32, 32)
+
 	TRAPHANDLER_NOEC(handler48, 48)
 
 
