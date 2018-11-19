@@ -37,9 +37,12 @@ sched_yield(void)
 
 	for (int i = 0; i < NENV; i++)
 	{
-		j = start + i; //Recorro desde ese punto.
+		j = (start + i) % NENV; //Recorro desde ese punto.
+		//Usando remainder (%) logro recorrer circularmente.
 		if (envs[j].env_status == ENV_RUNNABLE) env_run(&envs[j]);
 	}
+
+	//Si llegue aca no habia ninguno para correr. Pruebo con el que tenia antes.
 	if (curenv && curenv->env_status == ENV_RUNNING) env_run(curenv);
 
 	// sched_halt never returns
