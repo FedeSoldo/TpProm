@@ -58,6 +58,38 @@ duppage(envid_t envid, unsigned pn)
 	return 0;
 }
 
+
+/*envid_t
+fork_v0(void)
+{
+
+	// envid_t envid;
+	// uint8_t *addr;
+	// int r;
+	//
+	// envid_t id = sys_exofork();
+	//
+	// if (id < 0) panic("sys_exofork failed");
+	//
+	// if (id == 0) {	//SOY EL HIJO
+	// 	thisenv = &envs[ENVX(sys_getenvid())];
+	// 	return 0;
+	// }
+	//
+	// for (addr = (uint8_t*) UTEXT; addr < (uint8_t*)UTOP; addr += PGSIZE)
+	// 	//dup_or_share(envid, addr);
+	//
+	// // Also copy the stack we are currently running on.
+	// //dup_or_share(envid, ROUNDDOWN(&addr, PGSIZE));
+	//
+	// // Start the child environment running
+	// if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)
+	// 	panic("sys_env_set_status: %e", r);
+	//
+	// return envid;
+
+}*/
+
 //
 // User-level fork with copy-on-write.
 // Set up our page fault handler appropriately.
@@ -78,8 +110,11 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
+	//return fork_v0();
 	panic("fork not implemented");
 }
+
+
 
 // Challenge!
 int

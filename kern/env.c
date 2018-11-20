@@ -547,6 +547,7 @@ env_run(struct Env *e)
 	e->env_status = ENV_RUNNING;
 	e->env_runs++;
 	lcr3(PADDR(e->env_pgdir));
+	unlock_kernel();	// Desbloqueo el kernel si me dirijo a modo usuario
 	env_pop_tf(&e->env_tf);  // Segun entendi env_pop_tf se ocupa de resetear todo el ambiente del proceso.
 
 	// panic("env_run not yet implemented");
