@@ -317,7 +317,44 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+
+	struct Env* target_env;
+	int err;
+
+	err = envid2env(envid, &target_env, 0);
+	if (err)	return err;
+
+	if (!target_env->env_ipc_recving)  // Si es false no esta en condiciones de recibir
+		return -E_IPC_NOT_RECV;
+
+
+	target_env->env_ipc_from = curenv->env_id;
+	target_env->env_ipc_recving = false;
+	target_env->env_ipc_value = value;
+
+	if ((uintptr_t)srcva < UTOP && (uintptr_t)target_env->env_ipc_dstva < UTOP) {
+
+		//syscall_page_map pero sin chequear permisos
+		if ((uintptr_t)srcva % PGSIZE || ~PTE_SYSCALL & perm) return -E_INVAL;
+
+		// Seteo los permisos si no los tengo
+		perm |= PTE_U | PTE_P;
+
+
+		struct PageInfo* page = page_lookup(curenv->env_pgdir, srcva, 0);
+		if (perm & PTE_W)
+			return -E_INVAL;
+
+		err = page_insert(target_env->env_pgdir, page, target_env->env_ipc_dstva, perm);
+		if (err)	return err;
+
+		target_env->env_ipc_perm = perm;
+	}
+
+	target_env->env_status = ENV_RUNNABLE;
+	return 0;
+
+	//panic("sys_ipc_try_send not implemented");
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -335,7 +372,16 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+
+	curenv->env_ipc_recving = true;
+
+	if ((uintptr_t)dstva < UTOP && (uintptr_t)dstva % PGSIZE)
+		return -E_INVAL;
+
+	curenv->env_ipc_dstva = dstva; 
+	curenv->env_status = ENV_NOT_RUNNABLE;
+
+	//panic("sys_ipc_recv not implemented");
 	return 0;
 }
 
