@@ -233,7 +233,7 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if (srcva >= (void *) UTOP || PGOFF(srcva) != 0 || dstva >= (void *) UTOP || PGOFF(dstva) != 0)
 		return -E_INVAL;
 
-	//ToDo: falta el chequeo de no dar permiso de escritura a una pagina de solo lectura
+	//TODO: falta el chequeo de no dar permiso de escritura a una pagina de solo lectura
 	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL) != 0)
 		return -E_INVAL;
 
@@ -378,7 +378,7 @@ sys_ipc_recv(void *dstva)
 	if ((uintptr_t)dstva < UTOP && (uintptr_t)dstva % PGSIZE)
 		return -E_INVAL;
 
-	curenv->env_ipc_dstva = dstva; 
+	curenv->env_ipc_dstva = dstva;
 	curenv->env_status = ENV_NOT_RUNNABLE;
 
 	//panic("sys_ipc_recv not implemented");
