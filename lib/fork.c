@@ -58,37 +58,55 @@ duppage(envid_t envid, unsigned pn)
 	return 0;
 }
 
+static void
+dup_or_share(envid_t dstenv, void *addr, int perm)
+{
+	int r;
 
-/*envid_t
+	// This is NOT what you should do in your fork.
+	if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|PTE_W)) < 0)
+		panic("sys_page_alloc: %e", r);
+	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
+		panic("sys_page_map: %e", r);
+	memmove(UTEMP, addr, PGSIZE);
+	if ((r = sys_page_unmap(0, UTEMP)) < 0)
+		panic("sys_page_unmap: %e", r);
+}
+
+
+envid_t
 fork_v0(void)
 {
+	uint8_t *addr;
+	int r;
 
-	// envid_t envid;
-	// uint8_t *addr;
-	// int r;
-	//
-	// envid_t id = sys_exofork();
-	//
-	// if (id < 0) panic("sys_exofork failed");
-	//
-	// if (id == 0) {	//SOY EL HIJO
-	// 	thisenv = &envs[ENVX(sys_getenvid())];
-	// 	return 0;
-	// }
-	//
-	// for (addr = (uint8_t*) UTEXT; addr < (uint8_t*)UTOP; addr += PGSIZE)
-	// 	//dup_or_share(envid, addr);
-	//
-	// // Also copy the stack we are currently running on.
-	// //dup_or_share(envid, ROUNDDOWN(&addr, PGSIZE));
-	//
-	// // Start the child environment running
-	// if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)
-	// 	panic("sys_env_set_status: %e", r);
-	//
-	// return envid;
+	envid_t id = sys_exofork();
 
-}*/
+	if (id < 0) panic("sys_exofork failed");
+
+	if (id == 0)
+	{	//SOY EL HIJO
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+	//Hasta aca igual a dumbfork
+
+	for (addr = (uint8_t*) UTEXT; addr < (uint8_t*)UTOP; addr += PGSIZE)
+	{
+			//Deberiamos chequear si esta mapeada ?
+			//TODO: Falta conseguir los permisos para el tercer parametro.
+			dup_or_share(id, addr, 0);
+	}
+
+	//Aca volvemos a copiar a dumbfork
+	// Start the child environment running
+	if ((r = sys_env_set_status(id, ENV_RUNNABLE)) < 0)
+		panic("sys_env_set_status: %e", r);
+
+	return id;
+
+}
 
 //
 // User-level fork with copy-on-write.
@@ -110,7 +128,7 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	//return fork_v0();
+	return fork_v0();
 	panic("fork not implemented");
 }
 
