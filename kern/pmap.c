@@ -558,6 +558,9 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	if (!pte)
 		return NULL;
 	physaddr_t pa = PTE_ADDR(*pte);
+
+	if (pte_store != 0) *pte_store = pte;
+
 	return pa2page(pa);
 }
 

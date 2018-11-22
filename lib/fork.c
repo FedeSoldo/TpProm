@@ -63,6 +63,9 @@ dup_or_share(envid_t dstenv, void *addr, int perm)
 {
 	int r;
 
+	bool esrcitura = perm == ( perm | PTE_W);
+	//if (!escritura) sys_page_map()
+
 	// This is NOT what you should do in your fork.
 	if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|PTE_W)) < 0)
 		panic("sys_page_alloc: %e", r);
@@ -92,11 +95,15 @@ fork_v0(void)
 
 	//Hasta aca igual a dumbfork
 
-	for (addr = (uint8_t*) UTEXT; addr < (uint8_t*)UTOP; addr += PGSIZE)
+	for (addr = 0; addr < (uint8_t*)UTOP; addr += PGSIZE)
 	{
 			//Deberiamos chequear si esta mapeada ?
 			//TODO: Falta conseguir los permisos para el tercer parametro.
-			dup_or_share(id, addr, 0);
+			pde_t actual_PDE = uvpd[PDX(addr)];
+			pte_t actual_PTE = uvpt[PTX(actual_PDE)];
+			bool mapeada = actual_PTE | PTE_P;
+
+			if (mapeada) dup_or_share(id, addr, actual_PTE & PTE_SYSCALL);
 	}
 
 	//Aca volvemos a copiar a dumbfork
