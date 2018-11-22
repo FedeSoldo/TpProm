@@ -141,7 +141,16 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+
+	struct Env *env;
+	int err = envid2env(envid, &env, 1);
+	if (err < 0) {
+		return -E_BAD_ENV;
+	}
+	env->env_pgfault_upcall = func;
+	return 0;
+
+	//panic("sys_env_set_pgfault_upcall not implemented");
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -318,40 +327,43 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
 
-	struct Env* target_env;
+	struct Env* env;
 	int err;
 
-	err = envid2env(envid, &target_env, 0);
-	if (err)	return err;
+	err = envid2env(envid, &env, 0);
+	if (err < 0)	return err;
 
-	if (!target_env->env_ipc_recving)  // Si es false no esta en condiciones de recibir
+	if (!env->env_ipc_recving)  // Si es false no esta en condiciones de recibir
 		return -E_IPC_NOT_RECV;
-
-
-	target_env->env_ipc_from = curenv->env_id;
-	target_env->env_ipc_recving = false;
-	target_env->env_ipc_value = value;
-
-	if ((uintptr_t)srcva < UTOP && (uintptr_t)target_env->env_ipc_dstva < UTOP) {
-
-		//syscall_page_map pero sin chequear permisos
-		if ((uintptr_t)srcva % PGSIZE || ~PTE_SYSCALL & perm) return -E_INVAL;
-
-		// Seteo los permisos si no los tengo
-		perm |= PTE_U | PTE_P;
-
-
-		struct PageInfo* page = page_lookup(curenv->env_pgdir, srcva, 0);
-		if (perm & PTE_W)
-			return -E_INVAL;
-
-		err = page_insert(target_env->env_pgdir, page, target_env->env_ipc_dstva, perm);
-		if (err)	return err;
-
-		target_env->env_ipc_perm = perm;
+	else if ((uintptr_t)srcva < UTOP && ((uintptr_t)srcva % PGSIZE) != 0) {
+		return -E_INVAL;
+	} else if ((uintptr_t)srcva < UTOP && (perm & ~PTE_SYSCALL) != 0) {
+		return -E_INVAL;
 	}
 
-	target_env->env_status = ENV_RUNNABLE;
+
+
+	int received_perm = 0;
+	if ((uintptr_t)srcva < UTOP) {
+		pte_t *pte = NULL;
+		struct PageInfo *page = page_lookup(curenv->env_pgdir, srcva, &pte);
+		if (!page)
+			return -E_INVAL;
+		else if ((perm & PTE_W) && !(*pte & PTE_W))
+			return -E_INVAL;
+
+		if ((err = page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm)) < 0) {
+			return err;
+		}
+		received_perm = perm;
+	}
+
+	env->env_ipc_value = value;
+	env->env_ipc_from = curenv->env_id;
+	env->env_ipc_perm = received_perm;
+
+	env->env_ipc_recving = false;
+	env->env_status = ENV_RUNNABLE;
 	return 0;
 
 	//panic("sys_ipc_try_send not implemented");
@@ -373,16 +385,21 @@ sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
 
+	if ((uintptr_t)dstva % PGSIZE != 0) {
+		return -E_INVAL;
+	}
+
+	curenv->env_status = ENV_NOT_RUNNABLE;
 	curenv->env_ipc_recving = true;
 
-	if ((uintptr_t)dstva < UTOP && (uintptr_t)dstva % PGSIZE)
-		return -E_INVAL;
+	if ((uintptr_t)dstva >= UTOP) {
+		curenv->env_tf.tf_regs.reg_eax = 0;
+		sched_yield();
+	}
 
 	curenv->env_ipc_dstva = dstva;
-	curenv->env_status = ENV_NOT_RUNNABLE;
-
-	//panic("sys_ipc_recv not implemented");
-	return 0;
+	curenv->env_tf.tf_regs.reg_eax = 0;
+	sched_yield();
 }
 
 // Dispatches to the correct kernel function, passing the arguments.

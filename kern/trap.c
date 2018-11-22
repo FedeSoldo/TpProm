@@ -164,15 +164,16 @@ trap_init_percpu(void)
 	// when we trap to the kernel.
 	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - cid * (KSTKSIZE + KSTKGAP);
 	thiscpu->cpu_ts.ts_ss0 = GD_KD;
+	thiscpu->cpu_ts.ts_iomb = sizeof(struct Taskstate);
 
 	// Initialize the TSS slot of the gdt.
 	gdt[(GD_TSS0 >> 3)+cid] = SEG16(STS_T32A, (uint32_t) (&(thiscpu->cpu_ts)),
-					sizeof(struct Taskstate), 0);
+					sizeof(struct Taskstate) - 1, 0);
 	gdt[(GD_TSS0 >> 3)+cid].sd_s = 0;
 
 	// Load the TSS selector (like other segment selectors, the
 	// bottom three bits are special; we leave them 0)
-	ltr(GD_TSS0+8*cid);
+	ltr(GD_TSS0 + (cid << 3));
 
 	// Load the IDT
 	lidt(&idt_pd);
@@ -404,11 +405,40 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-	        curenv->env_id,
-	        fault_va,
-	        tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
+	if (!curenv->env_pgfault_upcall) {
+		// Destroy the environment that caused the fault.
+		cprintf("[%08x] user fault va %08x ip %08x\n",
+		        curenv->env_id,
+		        fault_va,
+		        tf->tf_eip);
+		print_trapframe(tf);
+		env_destroy(curenv);
+		return; //nose si es necesario
+	}
+
+	uintptr_t UXSTACKBOTTOM = UXSTACKTOP - PGSIZE;
+
+	uintptr_t tftop = UXSTACKTOP;
+	if (tf->tf_esp >= UXSTACKBOTTOM && tf->tf_esp < UXSTACKTOP) {
+		// necesita 1 word (4 bytes) en el tope de su stack
+		tftop = tf->tf_esp - 4;
+	}
+
+	struct UTrapframe *utf = (struct UTrapframe *)(tftop - sizeof(struct UTrapframe));
+
+	// el usuario esta autorizado a accedr a la memoria antes de escribir
+	user_mem_assert(curenv, utf, sizeof(struct UTrapframe), PTE_U | PTE_W);
+
+	utf->utf_fault_va = fault_va;
+	utf->utf_err = tf->tf_err;
+	utf->utf_regs = tf->tf_regs;
+	utf->utf_eip = tf->tf_eip;
+	utf->utf_eflags = tf->tf_eflags;
+	utf->utf_esp = tf->tf_esp;
+
+	curenv->env_tf.tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
+	curenv->env_tf.tf_esp = (uintptr_t)utf;
+
+	env_run(curenv);
+
 }

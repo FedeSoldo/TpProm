@@ -24,9 +24,8 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
 	// LAB 4: Your code here.
 
-	int err;
-	err = sys_ipc_recv(pg ? pg : (void*)UTOP);
-	if (err) {
+	int err = sys_ipc_recv(pg ? pg : (void*) KERNBASE);
+	if (err < 0) {	//HUBO ERROR
 		if (from_env_store) *from_env_store = 0;
 		if (perm_store) *perm_store = 0;
 		return err;
@@ -54,11 +53,11 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 
 	int err;
 	while (true) {
-		err = sys_ipc_try_send(to_env, val, pg ? pg : (void*)UTOP, perm);
-		if (!err) break;
-		else if (err != -E_IPC_NOT_RECV) panic("ipc_send error");
-		sys_yield();
-	}
+		err = sys_ipc_try_send(to_env, val, pg ? pg : (void*)KERNBASE, perm);
+		if (err == -E_IPC_NOT_RECV) sys_yield();
+		else if (err == 0) break;
+		else panic("ipc_send failed: %e", err);
+		}
 
 	//panic("ipc_send not implemented");
 }
