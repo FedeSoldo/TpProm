@@ -28,14 +28,13 @@ Cosas que nos faltan:
   - Env return (falta una pregunta)
  
 - Parte 2
-  - [ ] envid2env
-  - [ ] dumbfork
+  - dumbfork
   
 - Parte 3
-  - [ ] multicore_init
+  - multicore_init
   
 - Parte 4
-  - [ ] sys_ipc_try_send
+  - sys_ipc_try_send
   
 - Parte 5
   - Todo por ahora :(
