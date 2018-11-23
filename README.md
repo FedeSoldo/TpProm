@@ -25,7 +25,7 @@ Cosas que nos faltan:
   - Completa
 
 - Parte 1
-  - [ ] Env return
+  - Env return (falta una pregunta)
  
 - Parte 2
   - [ ] envid2env
