@@ -188,14 +188,14 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (va >= (void*) UTOP || PGOFF(va) != 0)
 		return -E_INVAL;
 
-	if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & ~PTE_SYSCALL) != 0)
+	if ((perm & ~PTE_SYSCALL) != 0)
 		return -E_INVAL;
 
 	page = page_alloc(ALLOC_ZERO);
 	if (page == NULL)
 		return -E_NO_MEM;
 
-	if (page_insert(env->env_pgdir, page, va, perm) < 0) {
+	if (page_insert(env->env_pgdir, page, va, perm | PTE_U | PTE_P) < 0) {
 		page_free(page);
 		return -E_NO_MEM;
 	}
@@ -329,32 +329,28 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-
-	struct Env* env;
-	int err;
-
-	err = envid2env(envid, &env, 0);
-	if (err < 0)	return err;
-
-	if (!env->env_ipc_recving)  // Si es false no esta en condiciones de recibir
+	int err = 0;
+	uintptr_t va = (uintptr_t)srcva;
+	struct Env *env = NULL;
+	if ((err = envid2env(envid, &env, 0)) < 0) {
+		return err;
+	} else if (!env->env_ipc_recving) {
 		return -E_IPC_NOT_RECV;
-	else if ((uintptr_t)srcva < UTOP && ((uintptr_t)srcva % PGSIZE) != 0) {
+	} else if (va < UTOP && (va % PGSIZE) != 0) {
 		return -E_INVAL;
-	} else if ((uintptr_t)srcva < UTOP && (perm & ~PTE_SYSCALL) != 0) {
+	} else if (va < UTOP && (perm & ~PTE_SYSCALL) != 0) {
 		return -E_INVAL;
 	}
 
-
-
 	int received_perm = 0;
-	if ((uintptr_t)srcva < UTOP) {
+	if (va < UTOP) {
 		pte_t *pte = NULL;
 		struct PageInfo *page = page_lookup(curenv->env_pgdir, srcva, &pte);
-		if (!page)
+		if (!page) {
 			return -E_INVAL;
-		else if ((perm & PTE_W) && !(*pte & PTE_W))
+		} else if ((perm & PTE_W) && !(*pte & PTE_W)) {
 			return -E_INVAL;
-
+		}
 		if ((err = page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm)) < 0) {
 			return err;
 		}
@@ -445,6 +441,15 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 	case SYS_page_unmap:
 		return sys_page_unmap(a1, (void *)a2);
+
+	case SYS_ipc_try_send:
+		return sys_ipc_try_send(a1, a2, (void*)a3, a4);
+
+	case SYS_ipc_recv:
+		return sys_ipc_recv((void*)a1);
+
+	case SYS_env_set_pgfault_upcall:
+		return sys_env_set_pgfault_upcall(a1, (void*)a2);
 
 	default:
 		return -E_INVAL;
