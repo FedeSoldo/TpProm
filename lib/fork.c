@@ -63,17 +63,18 @@ dup_or_share(envid_t dstenv, void *addr, int perm)
 {
 	int r;
 
-	bool esrcitura = perm == ( perm | PTE_W);
-	//if (!escritura) sys_page_map()
-
-	// This is NOT what you should do in your fork.
-	if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|PTE_W)) < 0)
-		panic("sys_page_alloc: %e", r);
-	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
-		panic("sys_page_map: %e", r);
-	memmove(UTEMP, addr, PGSIZE);
-	if ((r = sys_page_unmap(0, UTEMP)) < 0)
-		panic("sys_page_unmap: %e", r);
+	bool escritura = perm == ( perm | PTE_W);
+	if (!escritura) sys_page_map(0, addr, dstenv, addr, perm); //SE DUPLICA
+	else {
+		// This is NOT what you should do in your fork.
+		if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|PTE_W)) < 0)
+			panic("sys_page_alloc: %e", r);
+		if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
+			panic("sys_page_map: %e", r);
+		memmove(UTEMP, addr, PGSIZE);
+		if ((r = sys_page_unmap(0, UTEMP)) < 0)
+			panic("sys_page_unmap: %e", r);
+	}
 }
 
 
@@ -100,8 +101,9 @@ fork_v0(void)
 			//Deberiamos chequear si esta mapeada ?
 			//TODO: Falta conseguir los permisos para el tercer parametro.
 			pde_t actual_PDE = uvpd[PDX(addr)];
-			pte_t actual_PTE = uvpt[PTX(actual_PDE)];
-			bool mapeada = actual_PTE | PTE_P;
+			if ((actual_PDE | PTE_P) != actual_PDE) continue;
+			pte_t actual_PTE = uvpt[PGNUM(addr)];
+			bool mapeada = (actual_PTE | PTE_P) == actual_PTE;
 
 			if (mapeada) dup_or_share(id, addr, actual_PTE & PTE_SYSCALL);
 	}

@@ -51,9 +51,10 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
 	// LAB 4: Your code here.
 
+	if (!pg) pg = (void*)KERNBASE;
 	int err;
 	while (true) {
-		err = sys_ipc_try_send(to_env, val, pg ? pg : (void*)KERNBASE, perm);
+		err = sys_ipc_try_send(to_env, val, pg, perm);
 		if (err == -E_IPC_NOT_RECV) sys_yield();
 		else if (err == 0) break;
 		else panic("ipc_send failed: %e", err);
