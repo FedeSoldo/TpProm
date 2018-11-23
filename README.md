@@ -22,7 +22,7 @@ Completo
 Cosas que nos faltan:
 
 - Parte 0
-  - [ ] Pregunta en static_assert
+  - Completa
 
 - Parte 1
   - [ ] Env return
