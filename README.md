@@ -29,7 +29,8 @@ Cosas que nos faltan:
  
 - Parte 2
   - dumbfork
-  
+    - Pregunta 2, parte de codigo.
+    - Pregunta 4 completa.
 - Parte 3
   - multicore_init
   
