@@ -33,6 +33,8 @@ Cosas que nos faltan:
     - Pregunta 4 completa.
 - Parte 3
   - multicore_init
+    - Falta pregunta 4.
+    - Falta pregunta 5.
   
 - Parte 4
   - sys_ipc_try_send
