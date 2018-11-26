@@ -1,4 +1,4 @@
-#static_assert
+# static_assert
 
 El static_assert de JOS, hace los chequeos en tiempo de compilacion. De esta forma,
 se lanzara un error de compilacion si la condicion x no se cumple. La forma en que hace esto es
@@ -7,7 +7,7 @@ generando un error de compilacion.
 
 --------
 
-#env_return
+# env_return
 
 -  
 
@@ -30,6 +30,16 @@ que cuando llamemmos a esta funcion, ya no estaremos destruyendo el unico proces
 ------------
 
 # dumbfork
+
+1. No, no se propagará porque cuando estamos haciendo page_alloc alocamos una nueva página, pero no actualizamos nuestra cuenta de páginas. Esto debe hacerlo quien llame a la función. Por lo tanto cuando llamemos a dumbfork, se hará la copia del address space sin tener en cuenta la nueva página alocada.
+
+2. No, no se preserva. De hecho cuando hacemos la copia del address space al proceso hijo, podemos ver en duppage que todos las páginas son mapeadas con permisos de escritura y lectura.
+
+3. En duppage, primero se aloca una página a través de sys_page_alloc. Se mapea la página del proceso padre a una página del proceso hijo. Por último, se deshace el mapeo temporal.
+
+4.
+
+5. ROUNDDOWN se usa para redondear para abajo dejando la dirección como multiplo de PGSIZE. El parámetro addr que usamos es la dirección actual. Antes de copiar el stack, copiamos todo el resto del address space a través de un for. Cuando termina ese for, addr queda con la última dirección con la que salió del for. Es decir, la dirección del stack. Se usa ROUNDDOWN y no ROUNDUP porque sino podríamos pasarnos del espacio que tiene el stack. 
 
 ------------
 
