@@ -9,7 +9,8 @@ generando un error de compilacion.
 
 # env_return
 
--  
+-  La secuencia de llamados es la siguiente: El entry point se setea a la direccion de start dentro del archivo asm creado. Esta funcion chequea argumentos, y luego se realiza el llamado a libmain, y una vez aqui se llama al umain correspondiente. Cuando umain termina, se ejecuta ret y se vuelve a la direccion siguiente donde libmain hizo
+el call, llamando asi a exit. Aqui se realiza el llamado a sys_env_destroy, quien llama a syscall con los parametros correspondientes. Una vez desruido el enviroment se vuelve a exit, quien llama a ret y se vuelve a libmain, que luego de esto vuelve a start, que al finalizar devuelve el control al kernel.
 
 - La diferencia mas obvia es que en este TP estamos contemplando el uso de muchos CPUs, lo que nos
 permite correr varios procesos en distintos cores. Para el caso de la funcion env_destroy, esto significa
@@ -34,10 +35,39 @@ que cuando llamemmos a esta funcion, ya no estaremos destruyendo el unico proces
 1. No, no se propagará porque cuando estamos haciendo page_alloc alocamos una nueva página, pero no actualizamos nuestra cuenta de páginas. Esto debe hacerlo quien llame a la función. Por lo tanto cuando llamemos a dumbfork, se hará la copia del address space sin tener en cuenta la nueva página alocada.
 
 2. No, no se preserva. De hecho cuando hacemos la copia del address space al proceso hijo, podemos ver en duppage que todos las páginas son mapeadas con permisos de escritura y lectura.
+Código dentro de dumbfork, con addr como parametro:
+
+pde_t actual_PDE = uvpd[PDX(addr)];
+if ((actual_PDE | PTE_P) != actual_PDE) continue;
+pte_t actual_PTE = uvpt[PGNUM(addr)];
+bool modificable = (actual_PTE | PTE_W) == actual_PTE;
+
+if (modificable) MODIFICABLE
+else NO MODIFICABLE
 
 3. En duppage, primero se aloca una página a través de sys_page_alloc. Se mapea la página del proceso padre a una página del proceso hijo. Por último, se deshace el mapeo temporal.
 
-4.
+4. Agregaria un chequeo, asi en base a eso el hijo puede o no escribir en la pagina dada:
+
+void
+duppage(envid_t dstenv, void* addr, bool escritura)
+{
+	int r;
+
+  int perm = 0;
+  if (escritura) perm = PTE_W;
+
+	// This is NOT what you should do in your fork.
+	if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|perm)) < 0)
+		panic("sys_page_alloc: %e", r);
+	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|perm)) < 0)
+		panic("sys_page_map: %e", r);
+	memmove(UTEMP, addr, PGSIZE);
+	if ((r = sys_page_unmap(0, UTEMP)) < 0)
+		panic("sys_page_unmap: %e", r);
+}
+
+Asi las llamadas son las mismas, solo varian los permisos.
 
 5. ROUNDDOWN se usa para redondear para abajo dejando la dirección como multiplo de PGSIZE. El parámetro addr que usamos es la dirección actual. Antes de copiar el stack, copiamos todo el resto del address space a través de un for. Cuando termina ese for, addr queda con la última dirección con la que salió del for. Es decir, la dirección del stack. Se usa ROUNDDOWN y no ROUNDUP porque sino podríamos pasarnos del espacio que tiene el stack.
 
