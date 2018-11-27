@@ -30,7 +30,7 @@ Cosas que nos faltan:
 - Parte 2
   - dumbfork
     - Pregunta 2, parte de codigo.
-    - Pregunta 4 completa.
+    - Falta pregunta 4.
 - Parte 3
   - multicore_init
     - Falta pregunta 4.
@@ -40,7 +40,7 @@ Cosas que nos faltan:
   - sys_ipc_try_send
   
 - Parte 5
-  - Todo por ahora :(
+  - Nos rompe fault bad alloc
   
 - Parte 6
   - Todo por ahora :(
