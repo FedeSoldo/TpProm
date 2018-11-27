@@ -679,7 +679,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 		                        (void *) i,
 		                        0);  // Obtengo la pte correrspondiente
 
-		if ((i >= ULIM) || ((*pte & perm) !=
+		if ((pte == NULL) || (i >= ULIM) || ((*pte & perm) !=
 		                    perm))  // Condiciones donde no es user program
 		{
 			if (i < (uint32_t) va)
