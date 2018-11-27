@@ -25,12 +25,11 @@ Cosas que nos faltan:
   - Completa
 
 - Parte 1
-  - Env return (falta una pregunta)
+  - Completa
  
 - Parte 2
-  - dumbfork
-    - Pregunta 2, parte de codigo.
-    - Falta pregunta 4.
+  - Completa
+  
 - Parte 3
   - multicore_init
     - Falta pregunta 4.
