@@ -39,7 +39,7 @@ Cosas que nos faltan:
   - sys_ipc_try_send
   
 - Parte 5
-  - Nos rompe fault bad alloc
+  - Completa
   
 - Parte 6
   - Todo por ahora :(
