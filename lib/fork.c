@@ -98,8 +98,6 @@ fork_v0(void)
 
 	for (addr = 0; addr < (uint8_t*)UTOP; addr += PGSIZE)
 	{
-			//Deberiamos chequear si esta mapeada ?
-			//TODO: Falta conseguir los permisos para el tercer parametro.
 			pde_t actual_PDE = uvpd[PDX(addr)];
 			if ((actual_PDE | PTE_P) != actual_PDE) continue;
 			pte_t actual_PTE = uvpt[PGNUM(addr)];
@@ -138,7 +136,46 @@ fork(void)
 {
 	// LAB 4: Your code here.
 	return fork_v0();
-	panic("fork not implemented");
+
+	//Instalo el manejador de pagefaults
+	set_pgfault_handler(pgfault);
+
+	uint8_t *addr;
+	int r;
+	//Hacemos como siempre el llamado a sys_exofork
+	envid_t id = sys_exofork();
+
+	if (id < 0) panic("sys_exofork failed");
+
+	for (addr = 0; addr <(uint8_t*)USTACKTOP; addr += PGSIZE)
+	{
+		pde_t actual_PDE = uvpd[PDX(addr)];
+		pte_t actual_PTE = uvpt[PGNUM(addr)];
+		if ((actual_PDE & PTE_P) && (actual_PTE & PTE_P)
+			&& (actual_PTE & PTE_U))
+		{
+			duppage(id, PGNUM(addr));
+		}
+	}
+
+	if ((r = sys_page_alloc(id, (void *)(UXSTACKTOP-PGSIZE),PTE_P | PTE_W | PTE_U)) < 0)
+		panic("sys_page_alloc fallo!!");
+
+	extern void _pgfault_upcall();
+	sys_env_set_pgfault_upcall(id, _pgfault_upcall);
+
+	if (id == 0)
+	{	//SOY EL HIJO
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+
+	//Seteamos al hijo en ENV_RUNNABLE
+	if ((r = sys_env_set_status(id, ENV_RUNNABLE)) < 0)
+		panic("sys_env_set_status: %e", r);
+
+	return id;
 }
 
 
