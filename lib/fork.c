@@ -25,6 +25,8 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	pte_t actual_PTE = uvpt[PGNUM(addr)];
+	if (!(err & FEC_WR) || !(actual_PTE & PTE_COW)) panic("No es COW");
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -33,8 +35,16 @@ pgfault(struct UTrapframe *utf)
 	//   You should make three system calls.
 
 	// LAB 4: Your code here.
+	addr = ROUNDDOWN(addr, PGSIZE);
 
-	panic("pgfault not implemented");
+	if (sys_page_alloc(0, PFTEMP, PTE_W|PTE_U|PTE_P) < 0) panic("sys_page_alloc");
+	memcpy(PFTEMP, addr, PGSIZE);
+
+	if (sys_page_map(0, PFTEMP, 0, addr, PTE_W|PTE_U|PTE_P) < 0) panic("sys_page_map");
+
+	if (sys_page_unmap(0, PFTEMP) < 0) panic("sys_page_unmap");
+
+	//panic("pgfault not implemented");
 }
 
 //
@@ -147,7 +157,7 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	return fork_v0();
+	//return fork_v0();
 
 	//Instalo el manejador de pagefaults
 	set_pgfault_handler(pgfault);
@@ -159,7 +169,15 @@ fork(void)
 
 	if (id < 0) panic("sys_exofork failed");
 
-	for (addr = 0; addr <(uint8_t*)USTACKTOP; addr += PGSIZE)
+	if (id == 0)
+	{	//SOY EL HIJO
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+
+	//Reservar memoria para la pila de excepciones del hijo, e instalar su manejador de excepciones.?
+
+	for (addr = 0; addr <(uint8_t*)UTOP; addr += PGSIZE)
 	{
 		pde_t actual_PDE = uvpd[PDX(addr)];
 		pte_t actual_PTE = uvpt[PGNUM(addr)];
@@ -170,18 +188,11 @@ fork(void)
 		}
 	}
 
-	if ((r = sys_page_alloc(id, (void *)(UXSTACKTOP-PGSIZE),PTE_P | PTE_W | PTE_U)) < 0)
-		panic("sys_page_alloc fallo!!");
-
-	extern void _pgfault_upcall();
-	sys_env_set_pgfault_upcall(id, _pgfault_upcall);
-
-	if (id == 0)
-	{	//SOY EL HIJO
-		thisenv = &envs[ENVX(sys_getenvid())];
-		return 0;
-	}
-
+	// if ((r = sys_page_alloc(id, (void *)(UXSTACKTOP-PGSIZE),PTE_P | PTE_W | PTE_U)) < 0)
+	// 	panic("sys_page_alloc fallo!!");
+	//
+	// extern void _pgfault_upcall();
+	// sys_env_set_pgfault_upcall(id, _pgfault_upcall);
 
 	//Seteamos al hijo en ENV_RUNNABLE
 	if ((r = sys_env_set_status(id, ENV_RUNNABLE)) < 0)
