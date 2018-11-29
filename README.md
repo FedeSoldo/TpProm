@@ -31,9 +31,7 @@ Cosas que nos faltan:
   - Completa
   
 - Parte 3
-  - multicore_init
-    - Falta pregunta 4.
-    - Falta pregunta 5.
+  - Completa
   
 - Parte 4
   - sys_ipc_try_send
@@ -42,4 +40,4 @@ Cosas que nos faltan:
   - Completa
   
 - Parte 6
-  - Todo por ahora :(
+  - Con errores
