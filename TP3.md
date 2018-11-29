@@ -241,3 +241,5 @@ $5 = (void *) 0xf024e000 <percpu_kstacks+65536>``
 -----------
 
 # sys_ipc_try_send
+
+Se podrían usar las condition variables vistas en concurrencia. Por ejemplo, se puede seguir la idea de wait() donde se suspende la ejecución hasta que se cumpla cierta condición. En nuestro caso será que el proceso B pueda recibir un mensaje llamando a ipc_recv. 
