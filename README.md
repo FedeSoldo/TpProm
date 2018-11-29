@@ -34,10 +34,11 @@ Cosas que nos faltan:
   - Completa
   
 - Parte 4
-  - sys_ipc_try_send
+  - Completa
   
 - Parte 5
   - Completa
   
 - Parte 6
   - Con errores
+    - Tiene una pregunta escondida
