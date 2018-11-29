@@ -80,7 +80,7 @@ Asi las llamadas son las mismas, solo varian los permisos.
 2. La variable mpentry_kstack se usa porque aunque estemos usando todos los procesadores que no son de booteo, necesitamos saber qué stack usar desde mpentry.S para determinado CPU.
 Justamente en los comentarios de mpentry.S, nos dicen que es similar a boot.S excepto que no es necesario habilitar A20 y que se usa MPBOOTPHYS para calcular direcciones absolutas. Entonces si tuvieramos que reservar el espacio como lo hace boot.S, no deberíamos usar MPBOOTPHYS. El problema con esto es que mentry.S es cargada por el bootloader sin ningún tratamiento especial mientras que tiene que ser cargado por un CPU bootstrap by bootloader en 0x7000. Entonces hay que delimitar la dirección de carga original.
 
-3. ```(gdb) watch mpentry_kstack
+3. ``(gdb) watch mpentry_kstack
 Hardware watchpoint 1: mpentry_kstack
 (gdb) continue
 Continuing.
@@ -145,11 +145,98 @@ Thread 1 hit Hardware watchpoint 1: mpentry_kstack
 Old value = (void *) 0xf0253000 <percpu_kstacks+98304>
 New value = (void *) 0xf025b000 <percpu_kstacks+131072>
 boot_aps () at kern/init.c:109
-109			lapic_startap(c->cpu_id, PADDR(code));```
+109			lapic_startap(c->cpu_id, PADDR(code));``
 
 4.
+	 a. El valor que tiene es 0x7037 y se ejecuta desde la región de memoria de 0x7000.
+	 0x7037:	0x220f	0x0fd8	0xe020	0xc883	0x0f10	0xe022	0x200f	0x0dc0
+	 0x7047:	0x0001	0x8001	0x220f	0x8bc0
 
-5.
+
+	 b. No, la ejecución no se detiene al poner un breakpoint en mpentry.S. Esto sucede porque boot_aps copia el entry point del AP a una parte de la memoria que sea direccionable en modo real. En este caso se decide que sea a 0x7000.
+
+5. ``(gdb) b *0x7000 thread 4
+Breakpoint 1 at 0x7000
+(gdb) continue
+Continuing.
+
+Thread 2 received signal SIGTRAP, Trace/breakpoint trap.
+[Switching to Thread 2]
+warning: A handler for the OS ABI "GNU/Linux" is not built into this configuration
+of GDB.  Attempting to continue with the default i8086 settings.
+
+The target architecture is assumed to be i8086
+[ 700:   0]    0x7000:	cli    
+0x00000000 in ?? ()
+(gdb) disable 1
+(gdb) si 10
+The target architecture is assumed to be i386
+=> 0x7020:	mov    $0x10,%ax
+0x00007020 in ?? ()
+(gdb) x/10i $eip
+=> 0x7020:	mov    $0x10,%ax
+   0x7024:	mov    %eax,%ds
+   0x7026:	mov    %eax,%es
+   0x7028:	mov    %eax,%ss
+   0x702a:	mov    $0x0,%ax
+   0x702e:	mov    %eax,%fs
+   0x7030:	mov    %eax,%gs
+   0x7032:	mov    $0x120000,%eax
+   0x7037:	mov    %eax,%cr3
+   0x703a:	mov    %cr4,%eax
+(gdb) watch $eax == 0x120000
+Watchpoint 2: $eax == 0x120000
+(gdb) continue
+Continuing.
+=> 0x7037:	mov    %eax,%cr3
+
+Thread 2 hit Watchpoint 2: $eax == 0x120000
+
+Old value = 0
+New value = 1
+0x00007037 in ?? ()
+(gdb)  p $eip
+$1 = (void (*)()) 0x7037
+(gdb)  p mpentry_kstack
+$2 = (void *) 0x0
+(gdb) disas
+No function contains program counter for selected frame.
+(gdb) si
+=> 0x703a:	mov    %cr4,%eax
+0x0000703a in ?? ()
+(gdb)  p mpentry_kstack
+$3 = (void *) 0x0
+(gdb) si
+=> 0x703d:	or     $0x10,%eax
+
+Thread 2 hit Watchpoint 2: $eax == 0x120000
+
+Old value = 1
+New value = 0
+0x0000703d in ?? ()
+(gdb)  p mpentry_kstack
+$4 = (void *) 0x0
+(gdb) si
+=> 0x7040:	mov    %eax,%cr4
+0x00007040 in ?? ()
+(gdb)
+=> 0x7043:	mov    %cr0,%eax
+0x00007043 in ?? ()
+(gdb)
+=> 0x7046:	or     $0x80010001,%eax
+0x00007046 in ?? ()
+(gdb)
+=> 0x704b:	mov    %eax,%cr0
+0x0000704b in ?? ()
+(gdb)
+=> 0x704e:	mov    0xf023ce84,%esp
+0x0000704e in ?? ()
+(gdb)
+=> 0x7054:	mov    $0x0,%ebp
+0x00007054 in ?? ()
+(gdb)  p mpentry_kstack
+$5 = (void *) 0xf024e000 <percpu_kstacks+65536>``
+
 
 -----------
 
