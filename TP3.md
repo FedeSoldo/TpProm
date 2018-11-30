@@ -242,4 +242,11 @@ $5 = (void *) 0xf024e000 <percpu_kstacks+65536>``
 
 # sys_ipc_try_send
 
-Se podrían usar las condition variables vistas en concurrencia. Por ejemplo, se puede seguir la idea de wait() donde se suspende la ejecución hasta que se cumpla cierta condición. En nuestro caso será que el proceso B pueda recibir un mensaje llamando a ipc_recv. 
+Se podrían usar las condition variables vistas en concurrencia. Por ejemplo, se puede seguir la idea de wait() donde se suspende la ejecución hasta que se cumpla cierta condición. En nuestro caso será que el proceso B pueda recibir un mensaje llamando a ipc_recv.
+
+-----------
+
+# fork
+
+No, no puede hacerse con la función set_pgfault_handler. Esto es porque se lee la variable global _pgfault_handler_. Esta variable vive es una determinada página que para cuando llega el hijo, ya ha sido copiada por el padre. Además, el padre copió esa página copy on write, por lo que escribir en ella generaría una excepción y todavía no tenemos memoria para la pila de excepciones.
+Deberemos hacer uso de las syscalls sys_page_alloc y sys_page_unmap.
