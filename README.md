@@ -40,5 +40,5 @@ Cosas que nos faltan:
   - Completa
   
 - Parte 6
-  - Con errores
-    - Tiene una pregunta escondida
+  - Completa
+    - Nos faltaría recorrer el número mínimo de páginas
