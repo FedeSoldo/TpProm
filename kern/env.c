@@ -402,6 +402,7 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
+
 	struct Env *newProcess;
 	int err = env_alloc(&newProcess,
 	                    0);  // Le paso el nuevo proceso a inicializar y le
@@ -410,6 +411,11 @@ env_create(uint8_t *binary, enum EnvType type)
 		panic("env_create: %e", err);
 	load_icode(newProcess, binary);
 	newProcess->env_type = type;
+
+	// If this is the file server (type == ENV_TYPE_FS) give it I/O
+	// privileges.
+	// LAB 5: Your code here.
+
 }
 
 //
