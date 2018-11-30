@@ -7,6 +7,7 @@ http://fisop.github.io
 - TP1 ---> branch tp1
 - TP2 ---> branch Tp2 
 - Tp3 ---> branch Tp3
+- Tp4 ---> branch Tp4
 
 --------
 ## Tp1
@@ -19,26 +20,8 @@ Completo
 
 ## Tp3
 
-Cosas que nos faltan:
+Completo
 
-- Parte 0
-  - Completa
+## Tp4
 
-- Parte 1
-  - Completa
- 
-- Parte 2
-  - Completa
-  
-- Parte 3
-  - Completa
-  
-- Parte 4
-  - Completa
-  
-- Parte 5
-  - Completa
-  
-- Parte 6
-  - Completa
-    - Nos faltaría recorrer el número mínimo de páginas
+- Todas las pruebas del Tp3 pasan. Hay que comentar algunas líneas para eso, pero ya está chequeado y anda.
