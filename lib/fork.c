@@ -175,24 +175,25 @@ fork(void)
 		return 0;
 	}
 
-	//Reservar memoria para la pila de excepciones del hijo, e instalar su manejador de excepciones.?
+	//Reservar memoria para la pila de excepciones del hijo, e instalar su manejador de excepciones.
+	//ESto hay que hacerlo a mano como dijo Dato.
+	if (sys_page_alloc(id, (void *)(UXSTACKTOP-PGSIZE), PTE_U|PTE_W|PTE_P) < 0)
+	panic("Fallo el sys_page_alloc");
+	extern void _pgfault_upcall();
+	sys_env_set_pgfault_upcall(id, _pgfault_upcall);
 
 	for (addr = 0; addr <(uint8_t*)UTOP; addr += PGSIZE)
 	{
 		pde_t actual_PDE = uvpd[PDX(addr)];
+		if ((actual_PDE | PTE_P) != actual_PDE) continue;
 		pte_t actual_PTE = uvpt[PGNUM(addr)];
-		if ((actual_PDE & PTE_P) && (actual_PTE & PTE_P)
+		if ((actual_PTE & PTE_P)
 			&& (actual_PTE & PTE_U))
 		{
+			if (PGNUM(addr) >= PGNUM(UXSTACKTOP - PGSIZE) && (PGNUM(addr) < PGNUM(UXSTACKTOP))) continue;
 			duppage(id, PGNUM(addr));
 		}
 	}
-
-	// if ((r = sys_page_alloc(id, (void *)(UXSTACKTOP-PGSIZE),PTE_P | PTE_W | PTE_U)) < 0)
-	// 	panic("sys_page_alloc fallo!!");
-	//
-	// extern void _pgfault_upcall();
-	// sys_env_set_pgfault_upcall(id, _pgfault_upcall);
 
 	//Seteamos al hijo en ENV_RUNNABLE
 	if ((r = sys_env_set_status(id, ENV_RUNNABLE)) < 0)
