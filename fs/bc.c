@@ -51,6 +51,14 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 
+	//Primero redondeo.
+	addr = ROUNDDOWN(addr, PGSIZE);
+	//Alocamos la pagina.
+	sys_page_alloc(0, addr, PTE_W|PTE_U|PTE_P);
+	//Leemos del disco.
+	if ((r = ide_read(blockno*BLKSECTS, addr, BLKSECTS)) < 0)
+		panic("Falla ide_read");
+
 	// Clear the dirty bit for the disk block page since we just read the
 	// block from disk
 	if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) <
