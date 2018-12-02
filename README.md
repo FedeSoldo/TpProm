@@ -24,4 +24,19 @@ Completo
 
 ## Tp4
 
-- Todas las pruebas del Tp3 pasan. Hay que comentar algunas líneas para eso, pero ya está chequeado y anda.
+### Todas las pruebas del Tp3 pasan. Hay que comentar algunas líneas para eso, pero ya está chequeado y anda.
+
+- Parte 0
+  - Completa
+  
+- Parte 1
+  - Todo
+  
+- Parte 1
+  - Todo
+  
+- Parte 1
+  - Todo
+  
+- Parte 1
+  - Todo
