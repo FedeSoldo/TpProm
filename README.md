@@ -30,7 +30,7 @@ Completo
   - Completa
   
 - Parte 1
-  - Todo
+  - Completa
   
 - Parte 1
   - Todo
