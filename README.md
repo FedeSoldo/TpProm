@@ -32,11 +32,11 @@ Completo
 - Parte 1
   - Completa
   
-- Parte 1
-  - Todo
+- Parte 2
+  - Completa
   
-- Parte 1
-  - Todo
+- Parte 3
+  - Completa
   
-- Parte 1
+- Parte 4
   - Todo
