@@ -323,5 +323,25 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
+
+  int pn, r;
+
+    for (int i = 0; i < NPDENTRIES; i++)
+    {
+      for (int j = 0; j < NPTENTRIES; j++)
+      {
+        pn = i * NPDENTRIES + j;
+        pde_t actual_PDE = uvpd[i];
+        if ((actual_PDE | PTE_P) != actual_PDE) continue;
+        pte_t actual_PTE = uvpt[pn];
+        if (pn * PGSIZE < UTOP && actual_PDE && actual_PTE)
+        {
+          if (actual_PTE & PTE_SHARE)
+          {
+            if ((r = sys_page_map(0, (void*)(pn * PGSIZE), child, (void*)(pn * PGSIZE), actual_PTE & PTE_SYSCALL)) < 0) return r;
+          }
+        }
+      }
+    }
 	return 0;
 }

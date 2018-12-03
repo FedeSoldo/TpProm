@@ -67,14 +67,15 @@ duppage(envid_t envid, unsigned pn)
 	//Calculo la direccion a partir del numero de pagina.
 	void *addr = (void*) (pn*PGSIZE);
 
-	if ((uvpt[pn] & PTE_W) || (uvpt[pn] & PTE_COW))
-	{
-		if (sys_page_map(0, addr, envid, addr, PTE_COW|PTE_U|PTE_P) < 0)
-			panic("Error 1");
-		if (sys_page_map(0, addr, 0, addr, PTE_COW|PTE_U|PTE_P) < 0)
-			panic("Error 2");
-	}
-	else sys_page_map(0, addr, envid, addr, PTE_U|PTE_P);
+	if (uvpt[pn] & PTE_SHARE) sys_page_map(0, addr, envid, addr, uvpt[pn]&PTE_SYSCALL); //Copiamos directo porque tiene activado el share.
+	else if ((uvpt[pn] & PTE_W) || (uvpt[pn] & PTE_COW))
+		{
+			if (sys_page_map(0, addr, envid, addr, PTE_COW|PTE_U|PTE_P) < 0)
+				panic("Error 1");
+			if (sys_page_map(0, addr, 0, addr, PTE_COW|PTE_U|PTE_P) < 0)
+				panic("Error 2");
+		}
+		else sys_page_map(0, addr, envid, addr, PTE_U|PTE_P);
 
 	//panic("duppage not implemented");
 	return 0;
