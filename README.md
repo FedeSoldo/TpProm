@@ -24,19 +24,4 @@ Completo
 
 ## Tp4
 
-### Todas las pruebas del Tp3 pasan. Hay que comentar algunas líneas para eso, pero ya está chequeado y anda.
-
-- Parte 0
-  - Completa
-  
-- Parte 1
-  - Completa
-  
-- Parte 2
-  - Completa
-  
-- Parte 3
-  - Completa
-  
-- Parte 4
-  - Todo
+Completo
