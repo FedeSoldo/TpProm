@@ -92,6 +92,21 @@ trap_init(void)
 	void handler19(void);
 
 	void handler32(void);
+	void handler33(void);
+	void handler34(void);
+	void handler35(void);
+	void handler36(void);
+	void handler37(void);
+	void handler38(void);
+	void handler39(void);
+	void handler40(void);
+	void handler41(void);
+	void handler42(void);
+	void handler43(void);
+	void handler44(void);
+	void handler45(void);
+	void handler46(void);
+	void handler47(void);
 
 	void handler48(void);
 
@@ -289,6 +304,16 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle keyboard and serial interrupts.
 	// LAB 5: Your code here.
+
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_KBD) {
+		kbd_intr();
+		return;
+	}
+
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SERIAL) {
+		serial_intr();
+		return;
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
