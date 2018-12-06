@@ -57,7 +57,6 @@ again:
 			// LAB 5: Your code here.
 
 			if ((fd = open(t, O_RDONLY)) < 0) {
-				cprintf("open %s for write: %e", t, fd);
 				exit();
 			}
 			if (fd != 0) {
