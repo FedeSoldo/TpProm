@@ -122,3 +122,9 @@ sys_time_msec(void)
 {
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
+
+int
+sys_e1000_transmit(void *address, size_t len)
+{
+	return syscall(SYS_e1000_transmit, 0, (uint32_t)address, len, 0, 0, 0);
+}

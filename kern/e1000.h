@@ -24,6 +24,7 @@
 
 
 #define CANT_DESCS 32
+#define MAX_PQT 1518
 
 
 int e1000_attach(struct pci_func *pcif);    //Funcion para pci.c
@@ -35,6 +36,8 @@ static uint32_t getreg(uint32_t offset);
 static void setreg(uint32_t offset, uint32_t value);
 
 void e1000_transmit_init();
+
+int e1000_transmit(void* addr, uint16_t len);
 
 // Transmit Descriptor
 struct tx_desc {
