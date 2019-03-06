@@ -128,3 +128,9 @@ sys_e1000_transmit(void *address, size_t len)
 {
 	return syscall(SYS_e1000_transmit, 0, (uint32_t)address, len, 0, 0, 0);
 }
+
+int
+sys_e1000_receive(void *address, size_t size)
+{
+  return syscall(SYS_e1000_receive, 0, (uint32_t)address, size, 0, 0, 0);
+}

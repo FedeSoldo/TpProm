@@ -441,6 +441,14 @@ sys_e1000_transmit(void *addr, size_t len)
   return e1000_transmit(addr, len);
 }
 
+static int
+sys_e1000_receive(void *addr, size_t size)
+{
+	user_mem_assert(curenv, addr, 0, PTE_U | PTE_P | PTE_W);
+  return e1000_receive(addr, size);
+}
+
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -499,6 +507,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
 	case SYS_e1000_transmit:
 		return sys_e1000_transmit((void*)a1, a2);
+
+	case SYS_e1000_receive:
+		return sys_e1000_receive((void*)a1, a2);
 
 	default:
 		return -E_INVAL;
