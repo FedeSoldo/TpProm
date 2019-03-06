@@ -106,6 +106,7 @@ int e1000_receive(void* addr, size_t size)
   uint32_t next = (tail + 1) % CANT_RDESCS;
 
   if (!(rdescs[next].status & E1000_RXD_STAT_DD)) //Cola vacia
+    cprintf("Cola de recepcion vacia\n");
     return -1;
 
   int lenght = rdescs[next].length;
