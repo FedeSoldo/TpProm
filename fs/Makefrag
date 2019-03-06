@@ -12,6 +12,8 @@ USERAPPS := 		$(OBJDIR)/user/init
 FSIMGTXTFILES :=	fs/newmotd \
 			fs/motd
 
+FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
+			fs/index.html
 
 USERAPPS :=		$(USERAPPS) \
 			$(OBJDIR)/user/cat \
@@ -74,4 +76,3 @@ all: $(OBJDIR)/fs/fs.img
 #all: $(addsuffix .sym, $(USERAPPS))
 
 #all: $(addsuffix .asm, $(USERAPPS))
-

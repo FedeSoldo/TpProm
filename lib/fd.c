@@ -126,6 +126,7 @@ fd_close(struct Fd *fd, bool must_exist)
 static struct Dev *devtab[] =
 {
 	&devfile,
+	&devsock,
 	&devpipe,
 	&devcons,
 	0
@@ -317,4 +318,3 @@ stat(const char *path, struct Stat *stat)
 	close(fd);
 	return r;
 }
-

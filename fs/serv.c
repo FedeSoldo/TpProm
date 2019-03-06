@@ -265,7 +265,7 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 	if ((cant_bits = file_write(of->o_file,	req->req_buf, req->req_n,	of->o_fd->fd_offset)) < 0) {
 		return cant_bits;
 	}
-	
+
 	of->o_fd->fd_offset += cant_bits;
 	return cant_bits;
 
@@ -382,6 +382,5 @@ umain(int argc, char **argv)
 
 	serve_init();
 	fs_init();
-	fs_test();
 	serve();
 }
